@@ -30,7 +30,7 @@ void StringUIdemoAudioProcessor::pluckString(int stringIndex, float position)
         // Dividiamo la corda in 12 segmenti (12 tasti)
         const int numFrets = 12;
 
-        // Calcoliamo quale tasto è stato premuto in base alla posizione X (0.0 a 1.0)
+        // Calcoliamo quale tasto  stato premuto in base alla posizione X (0.0 a 1.0)
         int fret = juce::jlimit(0, numFrets, (int)(position * (float)numFrets));
 
         // Nota MIDI finale = Nota base della corda + tasto
