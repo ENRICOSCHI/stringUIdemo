@@ -9,7 +9,7 @@ public:
     StringSynthesiser(double sampleRate, double frequencyInHz) : fs(sampleRate)
     {
         doPluckForNextBuffer.set(false);
-        // Allocazione massima per note basse (es. 20Hz)
+        //allocazione massima per note basse (es. 20Hz)
         maxDelayLength = (size_t)juce::roundToInt(sampleRate / 20.0);
         delayLine.resize(maxDelayLength, 0.0f);
         excitationSample.resize(maxDelayLength, 0.0f);
@@ -27,11 +27,11 @@ public:
     void generateAndAddData(float* outBuffer, int numSamples)
     {
         if (doPluckForNextBuffer.compareAndSetBool(0, 1))
-            exciteInternalBuffer(); // Riempie l'inizio della delayLine
+            exciteInternalBuffer(); //riempo l'inizio della DelayLine
 
         for (int i = 0; i < numSamples; ++i)
         {
-            // Fondamentale: usiamo currentDelayLength per il modulo, non delayLine.size()
+            //uso currentDelayLenght per il modulo e non delayLine.size()
             auto nextPos = (pos + 1) % currentDelayLength;
             delayLine[nextPos] = (float)(decay * 0.5 * (delayLine[nextPos] + delayLine[pos]));
             outBuffer[i] += delayLine[pos];
@@ -41,19 +41,19 @@ public:
 
     void setFrequency(double newFrequencyInHz)
     {
-        // Calcola il nuovo periodo della nota
+        //calcolo il nuovo periodo della nota
         currentDelayLength = (size_t)juce::roundToInt(fs / newFrequencyInHz);
         currentDelayLength = juce::jlimit((size_t)2, maxDelayLength, currentDelayLength);
 
-        // Rigenera il rumore solo per la parte necessaria
+        //rigenero il rumore solo per la parte necessaria
         std::generate(excitationSample.begin(), excitationSample.begin() + currentDelayLength,
-            [] { return (juce::Random::getSystemRandom().nextFloat() * 2.0f) - 1.0f; });
+            [] { return (juce::Random::getSystemRandom().nextFloat() * 2.0f) - 1.0f; });//<- lambda []
     }
 
 private:
     void exciteInternalBuffer()
     {
-        // Copia il rumore nell'area attiva della delay line
+        //copio il rumore nell'area attiva della delay line
         for (size_t i = 0; i < currentDelayLength; ++i)
             delayLine[i] = excitationSample[i] * (float)amplitude;
     }
@@ -78,7 +78,7 @@ class StringUIdemoAudioProcessor : public juce::AudioProcessor
 {
 public:
     static const int numStrings = 6;
-    // Accordatura standard chitarra: E2 A2 D3 G3 B3 E4
+    //accordatura standard chitarra: E2 A2 D3 G3 B3 E4
     static const int guitarMidiNotes[numStrings];
 
     StringUIdemoAudioProcessor();
@@ -111,7 +111,7 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
-    // Chiamato dall'editor per pizzicare una corda
+    //chiamato dall'editor per pizzicare una sola corda
     void pluckString(int stringIndex, float position);
 
 private:

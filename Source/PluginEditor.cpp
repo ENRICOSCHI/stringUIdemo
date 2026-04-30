@@ -21,7 +21,7 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor (StringUIdemo
     addAndMakeVisible(notaSuonataLabel);
     notaSuonataLabel.setText("negro",juce::NotificationType::dontSendNotification);
 
-    // Dimensioni editor: abbastanza larghe, con spazio sopra per futura UI
+    // Dimensioni finestra
     setSize (700, 400);
 }
 
@@ -30,58 +30,28 @@ StringUIdemoAudioProcessorEditor::~StringUIdemoAudioProcessorEditor() {}
 //==============================================================================
 void StringUIdemoAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // Sfondo scuro stile amplificatore
-    g.fillAll (juce::Colour (0xFF1A1A2E));
+    // Sfondo background
+    g.fillAll (juce::Colour (0xFF201513));
 
     // Titolo
-    g.setColour (juce::Colours::white.withAlpha (0.85f));
-    g.setFont (juce::FontOptions (18.0f, juce::Font::bold));
-    g.drawText ("String UI Demo - pizzica le corde!",
-                0, 10, getWidth(), 30,
-                juce::Justification::centred);
+    SetTitle(g);
 
     // Linea separatrice sopra le corde
-    auto stringsAreaY = getHeight() - (StringUIdemoAudioProcessor::numStrings * 30 + 16);
-    g.setColour (juce::Colours::white.withAlpha (0.15f));
-    g.drawHorizontalLine (stringsAreaY - 4, 10.0f, (float) getWidth() - 10.0f);
+    SetLineaSeparatrice(g);
 
-    // Etichette corde (da sinistra: E2 A2 D3 G3 B3 E4, ordine chitarra basso→alto)
-    const char* labels[] = { "E2", "A2", "D3", "G3", "B3", "E4" };
-    g.setFont (juce::FontOptions (11.0f));
+    // Etichette corde (da sinistra: E2 A2 D3 G3 B3 E4, ordine chitarra basso->alto)
+    SetStrings(g);
 
-    for (int i = 0; i < StringUIdemoAudioProcessor::numStrings; ++i)
-    {
-        auto* sc = stringComponents.getUnchecked (i);
-        g.setColour (stringColour (i));
-        g.drawText (labels[i],
-                    sc->getX() - 30, sc->getY(),
-                    28, sc->getHeight(),
-                    juce::Justification::centredRight);
-    }
-
-    // rettangoli separazione fret
-    auto* sc = stringComponents.getUnchecked(0);
-
-    float startX = (float)sc->getX();
-    float width = (float)sc->getWidth();
-    float fredWidth = width / (float)numFret;
-    g.setColour(juce::Colours::white);
-
-    for (int i = 0; i <= numFret; i++) {
-
-        float x = startX + i * fredWidth;    
-
-        g.fillRect((int)x, sc->getY(), 5, sc->getHeight() * (numCorde+1));
-    }
+    // Rettangoli separazione fret
+    SetSeparationFret(g);
 
 }
 
 void StringUIdemoAudioProcessorEditor::resized()
 {
-    //
-    // Le 6 corde occupano la parte BASSA dell'editor, come i tasti di una pianola.
-    // Tutte della stessa lunghezza (come su una chitarra fisica).
-    //
+    /*
+    * Le 6 corde stanno nella parte in basso della finestra.
+    */
     const int margin      = 40;  // margine sinistro per le etichette
     const int rightMargin = 10;
     const int stringH     = 24;  // altezza di ogni riga-corda
@@ -128,14 +98,79 @@ void StringUIdemoAudioProcessorEditor::handleMouseEvent (const juce::MouseEvent&
                 //aggiorno la nota midi
                 oldMidiNote = midiNote;
 
+                //prendo il nome della nota controllando # e ottave
                 juce::String nomeNota = juce::MidiMessage::getMidiNoteName(midiNote, true, true, 3);
 
+                //stampo nella label
                 notaSuonataLabel.setText("Nota: " + nomeNota + " Tasto: " + (juce::String)posFret, juce::dontSendNotification);
 
+                //riproduco suono
                 sc->stringPlucked(relPos);
                 audioProcessor.pluckString(i, relPos);
                 break;
             }
         }
+    }
+}
+
+/// <summary>
+/// Imposto il titolo del plug-in
+/// </summary>
+/// <param name="g"></param>
+void StringUIdemoAudioProcessorEditor::SetTitle(juce::Graphics& g) {
+    g.setColour(juce::Colours::white.withAlpha(0.85f));
+    g.setFont(juce::FontOptions(18.0f, juce::Font::bold));
+    g.drawText("String UI Demo - pizzica le corde!",
+        0, 10, getWidth(), 30,
+        juce::Justification::centred);
+}
+
+/// <summary>
+/// Linea sepratrice tra stringhe ed effetti
+/// </summary>
+/// <param name="g"></param>
+void StringUIdemoAudioProcessorEditor::SetLineaSeparatrice(juce::Graphics& g) {
+    auto stringsAreaY = getHeight() - (StringUIdemoAudioProcessor::numStrings * 30 + 16);
+    g.setColour(juce::Colour(0xFF4D453A));
+    g.drawHorizontalLine(stringsAreaY - 4, 10.0f, (float)getWidth() - 10.0f);
+}
+
+/// <summary>
+/// Creo le stringhe della chitarra (6)
+/// </summary>
+/// <param name="g"></param>
+void StringUIdemoAudioProcessorEditor::SetStrings(juce::Graphics& g) {
+    const char* labels[] = { "E2", "A2", "D3", "G3", "B3", "E4" };
+    g.setFont(juce::FontOptions(11.0f));
+
+    for (int i = 0; i < StringUIdemoAudioProcessor::numStrings; ++i)
+    {
+        auto* sc = stringComponents.getUnchecked(i);
+        g.setColour(stringColour(i));
+        g.drawText(labels[i],
+            sc->getX() - 30, sc->getY(),
+            28, sc->getHeight(),
+            juce::Justification::centredRight);
+    }
+}
+
+
+/// <summary>
+/// Creare le colonne che separano i fret 
+/// </summary>
+/// <param name="g"></param>
+void StringUIdemoAudioProcessorEditor::SetSeparationFret(juce::Graphics& g) {
+    auto* sc = stringComponents.getUnchecked(0);
+
+    float startX = (float)sc->getX();
+    float width = (float)sc->getWidth();
+    float fredWidth = width / (float)numFret;
+    g.setColour(juce::Colour(0xFFA88CEC));
+
+    for (int i = 0; i <= numFret; i++) {
+
+        float x = startX + i * fredWidth;
+
+        g.fillRect((int)x, sc->getY(), 5, sc->getHeight() * (numCorde + 1));
     }
 }

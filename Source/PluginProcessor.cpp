@@ -1,7 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-// Accordatura standard: E2=40, A2=45, D3=50, G3=55, B3=59, E4=64
+//accordatura standard: E2=40, A2=45, D3=50, G3=55, B3=59, E4=64
 const int StringUIdemoAudioProcessor::guitarMidiNotes[StringUIdemoAudioProcessor::numStrings]
 = { 40, 45, 50, 55, 59, 64 };
 
@@ -27,22 +27,22 @@ void StringUIdemoAudioProcessor::pluckString(int stringIndex, float position)
 {
     if (stringIndex >= 0 && stringIndex < stringSynths.size())
     {
-        // Dividiamo la corda in 12 segmenti (12 tasti)
+        //divido la corda in 12 segmenti (12 tasti)
         const int numFrets = 12;
 
-        // Calcoliamo quale tasto  stato premuto in base alla posizione X (0.0 a 1.0)
+        //calcolo il tasto premuto in base alla posizione x (da 0.0f a 1.0f)
         int fret = juce::jlimit(0, numFrets, (int)(position * (float)numFrets));
 
-        // Nota MIDI finale = Nota base della corda + tasto
+        //nota midi finale = noda base della corda + tasto
         int midiNote = guitarMidiNotes[stringIndex] + fret;
         double freqHz = juce::MidiMessage::getMidiNoteInHertz(midiNote);
 
         auto* synth = stringSynths.getUnchecked(stringIndex);
 
-        // 1. Aggiorna la frequenza del synth
+        // 1. aggiorno la frequenza del synth
         synth->setFrequency(freqHz);
 
-        // 2. Pizzica la corda
+        // 2. pizzico la corda
         synth->stringPlucked(position);
     }
 }
@@ -124,19 +124,19 @@ bool StringUIdemoAudioProcessor::isBusesLayoutSupported(const BusesLayout& layou
 #endif
 
 void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
-    juce::MidiBuffer& /*midiMessages*/)
+    juce::MidiBuffer& /*MidiMessage*/)
 {
     juce::ScopedNoDenormals noDenormals;
 
     buffer.clear();
 
-    // Genera tutte le corde sul canale 0
+    //genero tutte le corde sul canale 0
     float* channelData = buffer.getWritePointer(0);
 
     for (int i = 0; i < stringSynths.size(); ++i)
         stringSynths.getUnchecked(i)->generateAndAddData(channelData, buffer.getNumSamples());
 
-    // Copia canale 0 su tutti gli altri (stereo)
+    //copio canale 0 su tutti gli altri canali (stereo)
     for (int ch = 1; ch < buffer.getNumChannels(); ++ch)
         buffer.copyFrom(ch, 0, buffer, 0, 0, buffer.getNumSamples());
 }

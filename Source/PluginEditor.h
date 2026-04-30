@@ -14,17 +14,16 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    // Colori delle corde (pubblico per usarlo nel paint)
+    // Colori delle corde
     static juce::Colour stringColour(int index)
     {
-        // E2=oro, A2=argento, D3=bronzo, G3=azzurro, B3=verde, E4=rosso
         const juce::Colour colours[6] = {
-            juce::Colour(0xFFD4A017),
-            juce::Colour(0xFFC0C0C0),
-            juce::Colour(0xFFCD7F32),
-            juce::Colour(0xFF4FC3F7),
-            juce::Colour(0xFF81C784),
-            juce::Colour(0xFFEF5350)
+            juce::Colour(0xFF008000),//E2
+            juce::Colour(0xFF00CF00),//A2
+            juce::Colour(0xFF1FFF1F),//D3
+            juce::Colour(0xFF6FFF6F),//G3
+            juce::Colour(0xFF96FF96),//B3
+            juce::Colour(0xFFCCFFCC)//E4
         };
         return colours[index % 6];
     }
@@ -42,11 +41,18 @@ private:
 
     void mouseUp(const juce::MouseEvent& e) override {
         
-        //al rilascio del mouse azzero i parametri (-1 perchè 0 è una pos. del fret)
+        //al rilascio del mouse azzero i parametri (-1 perche' 0 e' una pos. del fret)
         oldPosFret = -1; 
         oldMidiNote = -1;
     }
     void handleMouseEvent(const juce::MouseEvent& e);
+
+    /*Editor Methods per impostare gli oggetti della UI*/
+    void SetTitle(juce::Graphics&);
+    void SetLineaSeparatrice(juce::Graphics&);
+    void SetStrings(juce::Graphics&);
+    void SetSeparationFret(juce::Graphics&);
+
 
     StringUIdemoAudioProcessor& audioProcessor;
 
@@ -54,6 +60,7 @@ private:
 
     //numero tasti del manico della chitarra
     const int numFret = 12;
+    //numero di corde della chitarra
     const int numCorde = 6;
 
     juce::Label notaSuonataLabel;
