@@ -11,6 +11,8 @@
 StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor (StringUIdemoAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
+
+    //aggiungo le string all'array di oggetti
     for (int i = 0; i < StringUIdemoAudioProcessor::numStrings; ++i)
     {
         auto* sc = stringComponents.add (new StringComponent (stringColour (i)));
