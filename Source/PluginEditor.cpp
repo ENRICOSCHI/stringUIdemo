@@ -58,6 +58,22 @@ void StringUIdemoAudioProcessorEditor::paint (juce::Graphics& g)
                     28, sc->getHeight(),
                     juce::Justification::centredRight);
     }
+
+    // rettangoli separazione fret
+    auto* sc = stringComponents.getUnchecked(0);
+
+    float startX = (float)sc->getX();
+    float width = (float)sc->getWidth();
+    float fredWidth = width / (float)numFret;
+    g.setColour(juce::Colours::white);
+
+    for (int i = 0; i <= numFret; i++) {
+
+        float x = startX + i * fredWidth;    
+
+        g.fillRect((int)x, sc->getY(), 5, sc->getHeight() * (numCorde+1));
+    }
+
 }
 
 void StringUIdemoAudioProcessorEditor::resized()
@@ -120,7 +136,6 @@ void StringUIdemoAudioProcessorEditor::handleMouseEvent (const juce::MouseEvent&
                 audioProcessor.pluckString(i, relPos);
                 break;
             }
-            
         }
     }
 }

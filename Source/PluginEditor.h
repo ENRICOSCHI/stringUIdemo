@@ -54,6 +54,7 @@ private:
 
     //numero tasti del manico della chitarra
     const int numFret = 12;
+    const int numCorde = 6;
 
     juce::Label notaSuonataLabel;
 
