@@ -43,6 +43,16 @@ void StringUIdemoAudioProcessor::pluckString(int stringIndex, float position)
 }
 
 //==============================================================================
+
+/// <summary>
+/// Imposto la stringa accordata a fino a un max e min di 12.
+/// Fa tre cose:
+/// 1) Controllo indice valido.
+/// 2) Limito il tuning.
+/// 3) Aggiorno frequenze nel StringSynthesiser.h
+/// </summary>
+/// <param name="stringIndex"></param>
+/// <param name="newMidiNote"></param>
 void StringUIdemoAudioProcessor::setStringMidiNote(int stringIndex, int newMidiNote)
 {
     if (stringIndex < 0 || stringIndex >= numStrings)

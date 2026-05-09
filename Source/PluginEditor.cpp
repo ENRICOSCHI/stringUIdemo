@@ -5,6 +5,7 @@
 StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
+    /* SET UP */
     // --- Corde visive ---
     for (int i = 0; i < StringUIdemoAudioProcessor::numStrings; ++i)
     {
@@ -17,6 +18,7 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     {
         // Pulsante [−]
         auto* btnDown = tuningDownButtons.add(new juce::TextButton("-"));
+        // quando premo il pulsante...
         btnDown->onClick = [this, i]()
             {
                 int current = audioProcessor.getStringMidiNote(i);
@@ -34,6 +36,7 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
 
         // Pulsante [+]
         auto* btnUp = tuningUpButtons.add(new juce::TextButton("+"));
+        //quando premo il pulsante...
         btnUp->onClick = [this, i]()
             {
                 int current = audioProcessor.getStringMidiNote(i);
@@ -96,7 +99,7 @@ void StringUIdemoAudioProcessorEditor::resized()
         // Corda visiva: parte dopo il pannello tuning
         stringComponents.getUnchecked(i)->setBounds(tuningPanelWidth, y, stringWidth, stringH);
 
-        // Layout pannello tuning per la corda i:
+        // Layout pannello tuning per la corda i-esima:
         // [−](22) [Label(44)] [+](22) — con 4px di gap tra elementi, 4px padding sx
         int px = 4;
         int btnW = 22;
@@ -152,8 +155,12 @@ void StringUIdemoAudioProcessorEditor::handleMouseEvent(const juce::MouseEvent& 
 }
 
 //==============================================================================
-// Tuning label: mostra nome nota base + delta in semitoni rispetto al default
-// Es.: "E2 (+2)" oppure "E2 (-1)" oppure "E2"
+
+/// <summary>
+/// Tuning label: mostra nome nota base + delta in semitoni rispetto al default.
+/// Es.: "E2 (+2)" oppure "E2 (-1)" oppure "E2"
+/// </summary>
+/// <param name="stringIndex"></param>
 void StringUIdemoAudioProcessorEditor::updateTuningLabel(int stringIndex)
 {
     if (stringIndex < 0 || stringIndex >= StringUIdemoAudioProcessor::numStrings)
