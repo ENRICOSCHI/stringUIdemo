@@ -4,9 +4,6 @@
 #include "StringSynthesiser.h"
 
 //==============================================================================
-
-
-//==============================================================================
 class StringUIdemoAudioProcessor : public juce::AudioProcessor
 {
 public:
