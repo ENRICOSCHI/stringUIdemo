@@ -159,9 +159,48 @@ bool StringUIdemoAudioProcessor::isBusesLayoutSupported(const BusesLayout& layou
 #endif
 
 void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
-    juce::MidiBuffer& /*midiMessages*/)
+    juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
+
+    // Gestione dei messaggi MIDI in arrivo
+    for (const auto metadata : midiMessages)
+    {
+        auto message = metadata.getMessage();
+
+        if (message.isNoteOn())
+        {
+            int midiNote = message.getNoteNumber();
+            float velocity = message.getFloatVelocity(); // Forza della plettrata
+
+            // Troviamo quale corda deve suonare questa nota.
+            // Una logica semplice: la prima corda che può coprire questa nota entro 12 tasti.
+            for (int i = 0; i < numStrings; ++i)
+            {
+                int openStringNote = currentMidiNotes[i];
+                int fret = midiNote - openStringNote;
+
+                if (fret >= 0 && fret <= 12) // Se la nota è suonabile su questa corda
+                {
+                    // Calcoliamo la posizione "virtuale" del tasto (0.0 a 1.0)
+                    // per farla digerire alla tua funzione pluckString
+                    float position = (float)fret / 12.0f;
+
+                    pluckString(i, position);
+
+                    // Se vogliamo che una nota MIDI attivi solo una corda, usiamo break.
+                    // Altrimenti, se la nota è presente su più corde (es. Mi), suonerebbero tutte.
+                    break;
+                }
+            }
+        }
+        else if (message.isNoteOff())
+        {
+            // Opzionale: gestire il rilascio se il tuo StringSynthesiser lo supporta.
+            // Molti modelli fisici di corde "lasciano suonare" finché l'energia non decade.
+        }
+    }
+
     buffer.clear();
 
     float* channelData = buffer.getWritePointer(0);
