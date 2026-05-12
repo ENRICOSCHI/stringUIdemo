@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 #include "StringComponent.h"
+#include "KnobStyle.h"
 
 //==============================================================================
 class StringUIdemoAudioProcessorEditor : public juce::AudioProcessorEditor
@@ -63,6 +64,11 @@ private:
 
     // Label nota suonata corrente
     juce::Label notaSuonataLabel;
+
+    // Manopole
+    KnobStyle stilePomello;
+    juce::Label titoloManopoloEffeto;
+    juce::Slider manopolaEffetto;
 
     // Costanti layout
     const int numFret = 12;

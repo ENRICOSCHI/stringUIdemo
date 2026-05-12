@@ -5,7 +5,7 @@
 StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    /* SET UP */
+    
     // --- Corde visive ---
     for (int i = 0; i < StringUIdemoAudioProcessor::numStrings; ++i)
     {
@@ -44,7 +44,8 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
                 updateTuningLabel(i);
             };
         addAndMakeVisible(btnUp);
-    }
+
+    }  
 
     // --- Pulsante Reset ---
     resetTuningButton.setButtonText("Reset");
@@ -60,6 +61,20 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     notaSuonataLabel.setText("negro", juce::NotificationType::dontSendNotification);
     notaSuonataLabel.setFont(juce::FontOptions(13.0f));
     notaSuonataLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+
+    //manopola
+    manopolaEffetto.setSliderStyle((juce::Slider::Rotary)); //faccio diventare lo slide un cerchio
+    manopolaEffetto.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20); //metto il testo sotto lo slider
+    manopolaEffetto.setNumDecimalPlacesToDisplay(2);//imposto la visione del decimale fino al 0.00
+    manopolaEffetto.setRange(0.0f, 1.0f); //range da 0 a 1
+    manopolaEffetto.setValue(0.5f); //valore iniziale a 0.5
+    manopolaEffetto.setLookAndFeel(&stilePomello); //imposto lo stile del pomello
+    addAndMakeVisible(manopolaEffetto);
+    //titolo manopola
+    titoloManopoloEffeto.setText("Effetto Negro", juce::dontSendNotification);
+    titoloManopoloEffeto.setJustificationType(juce::Justification::centred);
+    titoloManopoloEffeto.setColour(juce::Label::textColourId, juce::Colours::white);
+    addAndMakeVisible(titoloManopoloEffeto);
 
     // Inizializza tutte le label di tuning con i valori correnti
     updateAllTuningLabels();
@@ -115,8 +130,14 @@ void StringUIdemoAudioProcessorEditor::resized()
     // Pulsante Reset: sopra il pannello tuning
     resetTuningButton.setBounds(4, startY - 28, tuningPanelWidth - 8, 22);
 
-    // Label nota suonata: area libera in alto a destra
-    notaSuonataLabel.setBounds(tuningPanelWidth + 10, 50, getWidth() - tuningPanelWidth - 20, 24);
+    // Label nota suonata: sopra la parte per suonare le corde
+    notaSuonataLabel.setBounds(350,200, getWidth() - tuningPanelWidth - 20, 24);
+
+    //titolo manopola
+    titoloManopoloEffeto.setBounds(120, 35, 120, 20);
+    
+    //manopola
+    manopolaEffetto.setBounds(120, 50, 120, 120);
 }
 
 //==============================================================================
