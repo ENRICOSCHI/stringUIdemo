@@ -71,7 +71,7 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     manopolaEffetto.setLookAndFeel(&stilePomello); //imposto lo stile del pomello
     addAndMakeVisible(manopolaEffetto);
     //titolo manopola
-    titoloManopoloEffeto.setText("Effetto Negro", juce::dontSendNotification);
+    titoloManopoloEffeto.setText("Effetto 1", juce::dontSendNotification);
     titoloManopoloEffeto.setJustificationType(juce::Justification::centred);
     titoloManopoloEffeto.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(titoloManopoloEffeto);
@@ -140,47 +140,76 @@ void StringUIdemoAudioProcessorEditor::paint(juce::Graphics& g)
 
 void StringUIdemoAudioProcessorEditor::resized()
 {
-    // --- Dimensioni area corde ---
+    auto area = getLocalBounds();
+
+	// Sezione corde (parte inferiore, con i controlli di tuning a sinistra)
     const int stringH = 24;
     const int gap = 6;
     const int totalStrings = StringUIdemoAudioProcessor::numStrings;
     const int rightMargin = 10;
 
     const int stringsAreaH = totalStrings * stringH + (totalStrings - 1) * gap + 16;
-    const int startY = getHeight() - stringsAreaH;
-    const int stringWidth = getWidth() - tuningPanelWidth - rightMargin;
+
+    // Taglia la parte in basso per le corde
+    auto bottomArea = area.removeFromBottom(stringsAreaH);
+
+    // Posiziona il Pulsante Reset appena sopra l'area delle corde
+    resetTuningButton.setBounds(4, bottomArea.getY() - 28, tuningPanelWidth - 8, 22);
+
+    // Toglie gli 8 pixel di padding superiore iniziale prima di disegnare le corde
+    bottomArea.removeFromTop(8);
 
     for (int i = 0; i < totalStrings; ++i)
     {
-        int y = startY + i * (stringH + gap) + 8;
+		// Taglia un'area per la corda i-esima
+        auto row = bottomArea.removeFromTop(stringH);
+		// Aggiunge un gap dopo ogni corda in modo che non si attacchino tra loro
+        bottomArea.removeFromTop(gap);
 
-        // Corda visiva: parte dopo il pannello tuning
-        stringComponents.getUnchecked(i)->setBounds(tuningPanelWidth, y, stringWidth, stringH);
+        // Taglio l'area per la zona di tuning a sinistra della corda
+        auto tuningRow = row.removeFromLeft(tuningPanelWidth);
 
-        // Layout pannello tuning per la corda i-esima:
-        // [−](22) [Label(44)] [+](22) — con 4px di gap tra elementi, 4px padding sx
-        int px = 4;
+		// Aggiungo un gap a destra per non far attaccare le corde al bordo
+        row.removeFromRight(rightMargin);
+		// Posiziono la corda i-esima nell'area rimanente
+        stringComponents.getUnchecked(i)->setBounds(row);
+
         int btnW = 22;
         int lblW = 44;
-        int btnH = stringH - 2;
-        int elemY = y + 1;
 
-        tuningDownButtons.getUnchecked(i)->setBounds(px, elemY, btnW, btnH);
-        tuningLabels.getUnchecked(i)->setBounds(px + btnW + 2, elemY, lblW, btnH);
-        tuningUpButtons.getUnchecked(i)->setBounds(px + btnW + lblW + 4, elemY, btnW, btnH);
+        // Posizionamento dei controlli di tuning nella colonna a sinistra
+        tuningRow.removeFromLeft(4);
+        tuningDownButtons.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(btnW).reduced(0, 1));
+
+        tuningRow.removeFromLeft(2);
+        tuningLabels.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(lblW).reduced(0, 1));
+
+        tuningRow.removeFromLeft(4);
+        tuningUpButtons.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(btnW).reduced(0, 1));
     }
 
-    // Pulsante Reset: sopra il pannello tuning
-    resetTuningButton.setBounds(4, startY - 28, tuningPanelWidth - 8, 22);
 
-    // Label nota suonata: sopra la parte per suonare le corde
-    notaSuonataLabel.setBounds(350,200, getWidth() - tuningPanelWidth - 20, 24);
+	// Sezione superiore (manopola effetto + titolo)
 
-    //titolo manopola
-    titoloManopoloEffeto.setBounds(120, 35, 120, 20);
-    
-    //manopola
-    manopolaEffetto.setBounds(120, 50, 120, 120);
+    // Rimuove 40 pixel in alto per lasciare spazio al titolo
+    area.removeFromTop(40);
+
+    // Spazio per la Label della nota suonata
+    auto notaSuonataArea = area.removeFromBottom(30);
+    notaSuonataLabel.setBounds(notaSuonataArea.withSizeKeepingCentre(300, 24));
+    notaSuonataLabel.setJustificationType(juce::Justification::centred); // Centriamo il testo
+
+    // Divisione a metà della zona superiore
+    auto leftParamsArea = area.removeFromLeft(area.getWidth() / 2); // Metà sinistra (pronta per il futuro)
+    auto rightEffectsArea = area; // Quello che avanza è la metà destra
+
+    // Posizioniamo la manopola esattamente al centro della metà destra
+    int knobSize = 120;
+    auto manopolaBounds = rightEffectsArea.withSizeKeepingCentre(knobSize, knobSize);
+    manopolaEffetto.setBounds(manopolaBounds);
+
+    // Posizioniamo il titolo della manopola centrato appena sopra la manopola stessa
+    titoloManopoloEffeto.setBounds(manopolaBounds.getX(), manopolaBounds.getY() - 25, knobSize, 20);
 }
 
 //==============================================================================
