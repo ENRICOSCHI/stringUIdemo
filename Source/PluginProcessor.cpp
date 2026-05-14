@@ -17,21 +17,52 @@ StringUIdemoAudioProcessor::StringUIdemoAudioProcessor()
 #endif
     )
 #endif
+    , apvts(*this, nullptr, "PARAMETERS", createParameters())
 {
     // Inizializzazioni utili...
-	for (int i = 0; i < numStrings; ++i) 
+    for (int i = 0; i < numStrings; ++i) 
     {
         // Inizializzo il tuning corrente con i valori di default
-		currentMidiNotes[i] = defaultMidiNotes[i];
+        currentMidiNotes[i] = defaultMidiNotes[i];
 
         // Inizializzo gli atomic per la UI
-		uiStringWasPlucked[i].store(false);
-		uiPluckPosition[i].store(0.0f);
-	}
+        uiStringWasPlucked[i].store(false);
+        uiPluckPosition[i].store(0.0f);
+    }
 
+    // Prendo i riferimenti ai parametri di controllo dell'effettistica dalla APVTS
+    // (da usare in processBlock) (e quindi da dereferenziare)
+    driveParameter = apvts.getRawParameterValue("drive");
+    makeUpGainParameter = apvts.getRawParameterValue("makeUpGain");
 }
 
 StringUIdemoAudioProcessor::~StringUIdemoAudioProcessor() {}
+
+
+//==============================================================================
+
+/// <summary>
+/// Passa all'APVTS i parametri che voglio gestire (di tipo RangedAudioParameter) attraverso un vector di unique_ptr
+/// a tali parametri.s
+/// </summary>
+/// <remarks>
+/// Il metodo ".push_back(...)" aggiunge semplicemente una nuova entrata alla fine del vector.
+/// (Simile ad un ".Add(...)" nelle List<T> di C#)
+/// Tencincamente la funzione ritorna una tupla di puntatori all'inizio e alla fine del vector.
+/// Sostanzialmete equivale a paasare il vector stesso.
+/// </remarks>
+juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::createParameters() 
+{
+	// Salvo in un vector i puntatori ai parametri che voglio gestire con l'APVTS (da usare in processBlock)
+    std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+
+	// Attraverso il vector, creo i parametri di controllo dell'effettistica e li aggiungo alla APVTS
+    // (ID, nome, min, max, default)
+	params.push_back(std::make_unique<juce::AudioParameterFloat>("drive", "Drive", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("makeUpGain", "Make Up Gain", 0.0f, 1.0f, 0.5f));
+
+	return { params.begin(), params.end() };
+}
 
 //==============================================================================
 void StringUIdemoAudioProcessor::pluckString(int stringIndex, float position)
@@ -234,9 +265,22 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     #pragma region Aggiunta Distorsione
 
-    // Variabili di distorsione
-	float driveAmount = 5.0f; // serve a decidere la ripidità della tangente iperbolica (più alto = più distorto)
-	float makeUpGain = 0.5f; // serve a compensare l'aumento di volume intrinseco dell'operazione di distorsione
+    #pragma region Variabili di distorsione
+
+    // serve a decidere la ripidità della tangente iperbolica (più alto = più distorto)
+	float currentDrive = driveParameter->load(); 
+
+    // serve a compensare l'aumento di volume intrinseco dell'operazione di distorsione
+	float currentMakeUpGain = makeUpGainParameter->load(); 
+
+    /* Nota:
+        Per accedere ai valori dei parametri non passiamo per l'APVTS (relativamente lento), bensi' ci affidiamo
+		ai puntatori atomici definiti nel "PluginProcessor.h" e inizializzati nel costruttore.
+        Ciò è possibile poiché nel costruttore abbiamo passato i puntatori raw (dei parametri della APVTS)
+        ai nostri puntatori atomici.
+    */
+
+    #pragma endregion
 
     // Ciclo per ogni canale...
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
@@ -247,9 +291,11 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 		// Quindi applico la distorsione sample per sample nel buffer del canale
         for (int numSample = 0; numSample < buffer.getNumSamples(); ++numSample) {
 
-			float originialSample = channelData[numSample];
+			float originalSample = channelData[numSample];
             // Soft Clipping via tangente iperbolica.
-			float distortedSampple = std::tanh(originialSample * driveAmount) * makeUpGain; 
+			float distortedSample = std::tanh(originalSample * currentDrive) * currentMakeUpGain;
+
+			channelData[numSample] = distortedSample;
         }
     }
 

@@ -16,6 +16,11 @@ public:
     // Range MIDI consentito per il tuning (±12 semitoni rispetto al default)
     static const int tuningRangeSemitones = 12;
 
+    #pragma region Variabile APVTS per controllo Effettistica (UI)
+
+    juce::AudioProcessorValueTreeState apvts;
+
+    #pragma endregion
 
     #pragma region Variabili Atomic
 
@@ -71,6 +76,19 @@ public:
     void resetTuning();
 
 private:
+
+    #pragma region Parametri per Effettistica (UI)
+
+    // Funzione per creare i parametri da gestire con l'APVTS
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
+
+	// Puntatori atomici (thread-safe) per i parametri di controllo dell'effettistica
+	std::atomic<float>* driveParameter = nullptr;
+    std::atomic<float>* makeUpGainParameter = nullptr;
+
+    #pragma endregion
+
+
     // Nota MIDI base per ciascuna corda (modificabile dal tuning UI)
     int currentMidiNotes[numStrings];
 

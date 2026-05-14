@@ -31,6 +31,9 @@ public:
 
 private:
 
+	// --- Attachment per collegamenti con APVTS (Componente UI <-> Parametro) ---
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
+
 	// --- Callback del Timer --- (Per interazione Audio Thread -> UI Thread per la MIDI)
 	void timerCallback() override;
     /* Permette di controllare periodicamente 
