@@ -33,7 +33,7 @@ StringUIdemoAudioProcessor::StringUIdemoAudioProcessor()
     // Prendo i riferimenti ai parametri di controllo dell'effettistica dalla APVTS
     // (da usare in processBlock) (e quindi da dereferenziare)
     driveParameter = apvts.getRawParameterValue("drive");
-    makeUpGainParameter = apvts.getRawParameterValue("makeUpGain");
+    gainParameter = apvts.getRawParameterValue("gain");
 }
 
 StringUIdemoAudioProcessor::~StringUIdemoAudioProcessor() {}
@@ -58,8 +58,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::
 
 	// Attraverso il vector, creo i parametri di controllo dell'effettistica e li aggiungo alla APVTS
     // (ID, nome, min, max, default)
-	params.push_back(std::make_unique<juce::AudioParameterFloat>("drive", "Drive", 0.0f, 1.0f, 0.5f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("makeUpGain", "Make Up Gain", 0.0f, 1.0f, 0.5f));
+    // IMPORTANTE: è qui che si manipolano i parametri della manopola associata, NON dall'editor!
+    // (è una conseguenza dell'impiego dell'APVTS)
+	params.push_back(std::make_unique<juce::AudioParameterFloat>("drive", "Drive", 1.0f, 10.0f, 1.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("gain", "Gain", 0.0f, 1.0f, 0.5f));
 
 	return { params.begin(), params.end() };
 }
@@ -271,7 +273,7 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 	float currentDrive = driveParameter->load(); 
 
     // serve a compensare l'aumento di volume intrinseco dell'operazione di distorsione
-	float currentMakeUpGain = makeUpGainParameter->load(); 
+	float currentGain = gainParameter->load(); 
 
     /* Nota:
         Per accedere ai valori dei parametri non passiamo per l'APVTS (relativamente lento), bensi' ci affidiamo
@@ -293,7 +295,7 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
 			float originalSample = channelData[numSample];
             // Soft Clipping via tangente iperbolica.
-			float distortedSample = std::tanh(originalSample * currentDrive) * currentMakeUpGain;
+			float distortedSample = std::tanh(originalSample * currentDrive) * currentGain;
 
 			channelData[numSample] = distortedSample;
         }
