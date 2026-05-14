@@ -62,24 +62,35 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     notaSuonataLabel.setFont(juce::FontOptions(13.0f));
     notaSuonataLabel.setColour(juce::Label::textColourId, juce::Colours::white);
 
-    //manopola
-    manopolaEffetto.setSliderStyle((juce::Slider::Rotary)); //faccio diventare lo slide un cerchio
-    manopolaEffetto.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20); //metto il testo sotto lo slider
-    manopolaEffetto.setNumDecimalPlacesToDisplay(2);//imposto la visione del decimale fino al 0.00
-    manopolaEffetto.setRange(0.0f, 1.0f); //range da 0 a 1
-    manopolaEffetto.setValue(0.5f); //valore iniziale a 0.5
-    manopolaEffetto.setLookAndFeel(&stilePomello); //imposto lo stile del pomello
-    addAndMakeVisible(manopolaEffetto);
-    //titolo manopola
-    titoloManopoloEffeto.setText("Effetto 1", juce::dontSendNotification);
-    titoloManopoloEffeto.setJustificationType(juce::Justification::centred);
-    titoloManopoloEffeto.setColour(juce::Label::textColourId, juce::Colours::white);
-    addAndMakeVisible(titoloManopoloEffeto);
+	// --- Manopole ---
+    for (int i = 0; i < numManopole; ++i)
+    {
+        // Setup Manopola
+        manopolaEffetto[i].setSliderStyle(juce::Slider::Rotary);
+        manopolaEffetto[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+        manopolaEffetto[i].setNumDecimalPlacesToDisplay(2);
+        manopolaEffetto[i].setRange(0.0f, 1.0f);
+        manopolaEffetto[i].setValue(0.5f);
+        manopolaEffetto[i].setLookAndFeel(&stilePomello); // Usiamo lo stesso stile per tutte
+        addAndMakeVisible(manopolaEffetto[i]);
+
+        // Setup Titolo
+        titoloManopolaEffetto[i].setText("Effetto " + juce::String(i + 1), juce::dontSendNotification);
+        titoloManopolaEffetto[i].setJustificationType(juce::Justification::centred);
+        titoloManopolaEffetto[i].setColour(juce::Label::textColourId, juce::Colours::white);
+        addAndMakeVisible(titoloManopolaEffetto[i]);
+    }
 
     // Inizializza tutte le label di tuning con i valori correnti
     updateAllTuningLabels();
 
     setSize(750, 420);
+
+    // Rende la finestra ridimensionabile (questo è possibile grazie ai LocalBounds settati in precedenza)
+    setResizable(true, true);
+
+    // Limiti di dimensione della finestra
+    setResizeLimits(750, 420, 1200, 800);
 
 	// Avvio il timer per controllare le interazioni Audio Thread -> UI Thread (per la MIDI)
 	startTimerHz(60); // Timer che scade 60 volte al secondo (ogni ~16ms)
@@ -128,6 +139,9 @@ void StringUIdemoAudioProcessorEditor::timerCallback()
 }
 
 //==============================================================================
+
+#pragma region paint UI
+
 void StringUIdemoAudioProcessorEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(0xFF201513));
@@ -136,7 +150,22 @@ void StringUIdemoAudioProcessorEditor::paint(juce::Graphics& g)
     SetLineaSeparatrice(g);
     SetStrings(g);
     SetSeparationFret(g);
+
+    // Disegno delle aree
+    
+    // Imposta un colore semitrasparente per evidenziare le aree
+	g.setColour(juce::Colours::white.withAlpha(0.2f));
+
+    // Disegna un bordo
+    g.drawRect(areaParametriSinistra.reduced(4), 2.0f);
+	g.drawRect(areaEffettiDestra.reduced(4), 2.0f);
+
+
 }
+
+#pragma endregion
+
+#pragma region resized UI
 
 void StringUIdemoAudioProcessorEditor::resized()
 {
@@ -152,6 +181,9 @@ void StringUIdemoAudioProcessorEditor::resized()
 
     // Taglia la parte in basso per le corde
     auto bottomArea = area.removeFromBottom(stringsAreaH);
+
+    // Salva l'area delle corde
+	areaCordeSotto = bottomArea;
 
     // Posiziona il Pulsante Reset appena sopra l'area delle corde
     resetTuningButton.setBounds(4, bottomArea.getY() - 28, tuningPanelWidth - 8, 22);
@@ -203,14 +235,48 @@ void StringUIdemoAudioProcessorEditor::resized()
     auto leftParamsArea = area.removeFromLeft(area.getWidth() / 2); // Metà sinistra (pronta per il futuro)
     auto rightEffectsArea = area; // Quello che avanza è la metà destra
 
-    // Posizioniamo la manopola esattamente al centro della metà destra
-    int knobSize = 120;
-    auto manopolaBounds = rightEffectsArea.withSizeKeepingCentre(knobSize, knobSize);
-    manopolaEffetto.setBounds(manopolaBounds);
+    // Salva le due aree superiori
+    areaParametriSinistra = leftParamsArea;
+	areaEffettiDestra = rightEffectsArea;
 
-    // Posizioniamo il titolo della manopola centrato appena sopra la manopola stessa
-    titoloManopoloEffeto.setBounds(manopolaBounds.getX(), manopolaBounds.getY() - 25, knobSize, 20);
+
+    // Calcolo dinamico della dimensione della manopola in base alla grandezza della finestra
+
+    // Riduce l'area per non toccare i bordi visivi
+    auto workArea = rightEffectsArea.reduced(10);
+
+    // Divide la workArea a metà orizzontalmente (Riga Superiore e Riga Inferiore)
+    auto topRow = workArea.removeFromTop(workArea.getHeight() / 2);
+    auto bottomRow = workArea; // Quello che avanza è la riga inferiore
+
+    // Crea un array di 4 "Celle" (Rettangoli) per ospitare le manopole
+    juce::Rectangle<int> celleManopole[4];
+
+    celleManopole[0] = topRow.removeFromLeft(topRow.getWidth() / 2); // Cella in alto a SX
+    celleManopole[1] = topRow;                                       // Cella in alto a DX
+
+    celleManopole[2] = bottomRow.removeFromLeft(bottomRow.getWidth() / 2); // Cella in basso a SX
+    celleManopole[3] = bottomRow;                                          // Cella in basso a DX
+
+    // Posiziona le manopole all'interno delle rispettive celle
+    int maxKnobSize = 100;
+    int minKnobSize = 65;
+
+    for (int i = 0; i < numManopole; ++i)
+    {
+        // Usa la logica di adattamento dinamico
+        int calculatedSize = juce::jmin(celleManopole[i].getWidth(), celleManopole[i].getHeight() - 25, maxKnobSize);
+        int dynamicKnobSize = juce::jmax(minKnobSize, calculatedSize);
+
+        // Centra il riquadro della manopola all'interno della sua cella specifica
+        auto manopolaBounds = celleManopole[i].withSizeKeepingCentre(dynamicKnobSize, dynamicKnobSize);
+
+        manopolaEffetto[i].setBounds(manopolaBounds);
+        titoloManopolaEffetto[i].setBounds(manopolaBounds.getX(), manopolaBounds.getY() - 25, dynamicKnobSize, 20);
+    }
 }
+
+#pragma endregion
 
 //==============================================================================
 void StringUIdemoAudioProcessorEditor::handleMouseEvent(const juce::MouseEvent& e)

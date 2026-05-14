@@ -55,6 +55,11 @@ private:
     // Aggiorna tutte le label di tuning
     void updateAllTuningLabels();
 
+	// --- Sezioni della UI ---
+    juce::Rectangle<int> areaParametriSinistra;
+    juce::Rectangle<int> areaEffettiDestra;
+    juce::Rectangle<int> areaCordeSotto;
+
     // --- Dati ---
     StringUIdemoAudioProcessor& audioProcessor;
 
@@ -73,8 +78,9 @@ private:
 
     // Manopole
     KnobStyle stilePomello;
-    juce::Label titoloManopoloEffeto;
-    juce::Slider manopolaEffetto;
+    static constexpr int numManopole = 4;
+    juce::Slider manopolaEffetto[numManopole];
+    juce::Label titoloManopolaEffetto[numManopole];
 
     // Costanti layout
     const int numFret = 12;
