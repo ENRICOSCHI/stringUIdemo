@@ -303,6 +303,12 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     #pragma endregion
 
+	// Se è aperta l'interfaccia grafica, passo il buffer all'oscilloscopio per visualizzare le onde sonore
+    if (puntatoreOscilloscopio != nullptr)
+    {
+        // pushBuffer prende l'intero blocco audio e lo disegna
+        puntatoreOscilloscopio->pushBuffer(buffer);
+    }
 }
 
 //==============================================================================

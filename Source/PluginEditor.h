@@ -31,12 +31,17 @@ public:
 
 private:
 
-	// --- Manopole e relative label (drive + gain) ---
-	KnobStyle stilePomello;
-	juce::Label titoloManopoloEffetoDrive;
-	juce::Label titoloManopoloEffetoGain;
-	juce::Slider manopolaEffettoDrive;
-	juce::Slider manopolaEffettoGain;
+    // Manopole
+    KnobStyle stilePomello;
+    static constexpr int numManopole = 4;
+    juce::Slider manopolaEffetto[numManopole];
+    juce::Label titoloManopolaEffetto[numManopole];
+
+	//// --- Manopole e relative label (drive + gain) ---
+	//juce::Label titoloManopoloEffetoDrive;
+	//juce::Label titoloManopoloEffetoGain;
+	//juce::Slider manopolaEffettoDrive;
+	//juce::Slider manopolaEffettoGain;
 
 	// --- Attachment per collegamenti con APVTS (Componente UI <-> Parametro) ---
 	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
@@ -86,12 +91,6 @@ private:
 
     // Label nota suonata corrente
     juce::Label notaSuonataLabel;
-
-    // Manopole
-    KnobStyle stilePomello;
-    static constexpr int numManopole = 4;
-    juce::Slider manopolaEffetto[numManopole];
-    juce::Label titoloManopolaEffetto[numManopole];
 
     // Costanti layout
     const int numFret = 12;

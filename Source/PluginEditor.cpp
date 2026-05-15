@@ -112,10 +112,10 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     #pragma region Attachments
     
     driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-		audioProcessor.apvts, "drive", manopolaEffettoDrive);
+		audioProcessor.apvts, "drive", manopolaEffetto[0]);
 
 	gainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-		audioProcessor.apvts, "gain", manopolaEffettoGain);
+		audioProcessor.apvts, "gain", manopolaEffetto[1]);
 
     #pragma endregion
 }
