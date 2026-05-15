@@ -58,7 +58,7 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
 
     // --- Label nota suonata ---
     addAndMakeVisible(notaSuonataLabel);
-    notaSuonataLabel.setText("negro", juce::NotificationType::dontSendNotification);
+    notaSuonataLabel.setText("Nota", juce::NotificationType::dontSendNotification);
     notaSuonataLabel.setFont(juce::FontOptions(13.0f));
     notaSuonataLabel.setColour(juce::Label::textColourId, juce::Colours::white);
 
@@ -67,7 +67,13 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     {
         // Setup Manopola
         manopolaEffetto[i].setSliderStyle(juce::Slider::Rotary);
-        manopolaEffetto[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+        manopolaEffetto[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, 40, 15);
+
+        // Nascondo la box, lasciando solamente il testo
+        manopolaEffetto[i].setColour(juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
+        manopolaEffetto[i].setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+        manopolaEffetto[i].setColour(juce::Slider::textBoxTextColourId, juce::Colours::white);
+
         manopolaEffetto[i].setNumDecimalPlacesToDisplay(2);
         manopolaEffetto[i].setRange(0.0f, 1.0f);
         manopolaEffetto[i].setValue(0.5f);
@@ -84,13 +90,17 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     // Inizializza tutte le label di tuning con i valori correnti
     updateAllTuningLabels();
 
-    setSize(750, 420);
+    setSize(1280, 720);
 
     // Rende la finestra ridimensionabile (questo è possibile grazie ai LocalBounds settati in precedenza)
     setResizable(true, true);
 
     // Limiti di dimensione della finestra
-    setResizeLimits(750, 420, 1200, 800);
+    setResizeLimits(1280, 720, 1500, 840);
+
+    // Blocco delle proporzioni (Così si scala solo in obliquo)
+    if (auto* constrainer = getConstrainer())
+        constrainer->setFixedAspectRatio(1280.0 / 720.0);
 
 	// Avvio il timer per controllare le interazioni Audio Thread -> UI Thread (per la MIDI)
 	startTimerHz(60); // Timer che scade 60 volte al secondo (ogni ~16ms)
@@ -171,109 +181,96 @@ void StringUIdemoAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
 
-	// Sezione corde (parte inferiore, con i controlli di tuning a sinistra)
-    const int stringH = 24;
-    const int gap = 6;
-    const int totalStrings = StringUIdemoAudioProcessor::numStrings;
-    const int rightMargin = 10;
+    // Calcola quanto la finestra è stata ingrandita o rimpicciolita
+    float scale = (float)getWidth() / 750.0f;
 
-    const int stringsAreaH = totalStrings * stringH + (totalStrings - 1) * gap + 16;
+    #pragma region Area corde scalata
+        // --- AREA CORDE SCALATA ---
+        int stringH = 17 * scale;
+        int gap = 4 * scale;
+        int rightMargin = 10 * scale;
+        int scaledTuningPanelWidth = tuningPanelWidth * scale; // Scala il tuo pannello
+        const int totalStrings = StringUIdemoAudioProcessor::numStrings;
 
-    // Taglia la parte in basso per le corde
-    auto bottomArea = area.removeFromBottom(stringsAreaH);
+        int stringsAreaH = totalStrings * stringH + (totalStrings - 1) * gap + (16 * scale);
 
-    // Salva l'area delle corde
-	areaCordeSotto = bottomArea;
+        auto bottomArea = area.removeFromBottom(stringsAreaH);
+        areaCordeSotto = bottomArea;
+    
 
-    // Posiziona il Pulsante Reset appena sopra l'area delle corde
-    resetTuningButton.setBounds(4, bottomArea.getY() - 28, tuningPanelWidth - 8, 22);
+        resetTuningButton.setBounds(4 * scale, bottomArea.getY() - (18 * scale), scaledTuningPanelWidth - (65 * scale), 13 * scale);
+        bottomArea.removeFromTop(8 * scale);
 
-    // Toglie gli 8 pixel di padding superiore iniziale prima di disegnare le corde
-    bottomArea.removeFromTop(8);
+        for (int i = 0; i < totalStrings; ++i)
+        {
+            // Separazione della zona inferiore
+            auto row = bottomArea.removeFromTop(stringH);
+            bottomArea.removeFromTop(gap);
 
-    for (int i = 0; i < totalStrings; ++i)
-    {
-		// Taglia un'area per la corda i-esima
-        auto row = bottomArea.removeFromTop(stringH);
-		// Aggiunge un gap dopo ogni corda in modo che non si attacchino tra loro
-        bottomArea.removeFromTop(gap);
+            auto tuningRow = row.removeFromLeft(scaledTuningPanelWidth);
+            row.removeFromRight(rightMargin);
+            stringComponents.getUnchecked(i)->setBounds(row);
 
-        // Taglio l'area per la zona di tuning a sinistra della corda
-        auto tuningRow = row.removeFromLeft(tuningPanelWidth);
+            int btnW = 22 * scale;
+            int lblW = 44 * scale;
 
-		// Aggiungo un gap a destra per non far attaccare le corde al bordo
-        row.removeFromRight(rightMargin);
-		// Posiziono la corda i-esima nell'area rimanente
-        stringComponents.getUnchecked(i)->setBounds(row);
+            tuningRow.removeFromLeft(4 * scale);
+            tuningDownButtons.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(btnW).reduced(0, 1));
 
-        int btnW = 22;
-        int lblW = 44;
+            tuningRow.removeFromLeft(2 * scale);
+            tuningLabels.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(lblW).reduced(0, 1));
 
-        // Posizionamento dei controlli di tuning nella colonna a sinistra
-        tuningRow.removeFromLeft(4);
-        tuningDownButtons.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(btnW).reduced(0, 1));
+		    // Scala la grandezza del testo delle label di tuning
+            tuningLabels.getUnchecked(i)->setFont(juce::FontOptions(11.0f * scale, juce::Font::bold));
 
-        tuningRow.removeFromLeft(2);
-        tuningLabels.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(lblW).reduced(0, 1));
+            tuningRow.removeFromLeft(4 * scale);
+            tuningUpButtons.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(btnW).reduced(0, 1));
+        }
+    #pragma endregion
 
-        tuningRow.removeFromLeft(4);
-        tuningUpButtons.getUnchecked(i)->setBounds(tuningRow.removeFromLeft(btnW).reduced(0, 1));
-    }
+    #pragma region Area superiore scalata
+        // --- AREA SUPERIORE SCALATA ---
+        area.removeFromTop(30 * scale);
+        auto notaSuonataArea = area.removeFromBottom(19 * scale);
+        notaSuonataLabel.setBounds(notaSuonataArea.withSizeKeepingCentre(538 * scale, 20 * scale).translated(0, -2 * scale));
+        notaSuonataLabel.setFont(juce::FontOptions(10.0f * scale));
 
+        auto leftParamsArea = area.removeFromLeft(area.getWidth() / 2);
+        auto rightEffectsArea = area;
 
-	// Sezione superiore (manopola effetto + titolo)
+        areaParametriSinistra = leftParamsArea;
+        areaEffettiDestra = rightEffectsArea;
+    #pragma endregion
 
-    // Rimuove 40 pixel in alto per lasciare spazio al titolo
-    area.removeFromTop(40);
+    #pragma region Griglia manopole scalata
+        // --- GRIGLIA MANOPOLE SCALATA ---
+        auto workArea = rightEffectsArea.reduced(10 * scale);
+        auto topRow = workArea.removeFromTop(workArea.getHeight() / 2);
+        auto bottomRow = workArea;
 
-    // Spazio per la Label della nota suonata
-    auto notaSuonataArea = area.removeFromBottom(30);
-    notaSuonataLabel.setBounds(notaSuonataArea.withSizeKeepingCentre(300, 24));
-    notaSuonataLabel.setJustificationType(juce::Justification::centred); // Centriamo il testo
+        juce::Rectangle<int> celleManopole[4];
+        celleManopole[0] = topRow.removeFromLeft(topRow.getWidth() / 2);
+        celleManopole[1] = topRow;
+        celleManopole[2] = bottomRow.removeFromLeft(bottomRow.getWidth() / 2);
+        celleManopole[3] = bottomRow;
 
-    // Divisione a metà della zona superiore
-    auto leftParamsArea = area.removeFromLeft(area.getWidth() / 2); // Metà sinistra (pronta per il futuro)
-    auto rightEffectsArea = area; // Quello che avanza è la metà destra
+        for (int i = 0; i < numManopole; ++i)
+        {
+            // Visto che la cella mantiene sempre la stessa proporzione, 
+            // la manopola occupa il 75% dello spazio della cella
+            int dynamicKnobSize = celleManopole[i].getWidth() * 0.35f;
 
-    // Salva le due aree superiori
-    areaParametriSinistra = leftParamsArea;
-	areaEffettiDestra = rightEffectsArea;
+            auto manopolaBounds = celleManopole[i].withSizeKeepingCentre(dynamicKnobSize, dynamicKnobSize);
+            manopolaEffetto[i].setBounds(manopolaBounds);
 
+            // Scala il testo dentro lo slider della manopola
+            manopolaEffetto[i].setTextBoxStyle(juce::Slider::TextBoxBelow, false, 25 * scale, 10 * scale);
 
-    // Calcolo dinamico della dimensione della manopola in base alla grandezza della finestra
-
-    // Riduce l'area per non toccare i bordi visivi
-    auto workArea = rightEffectsArea.reduced(10);
-
-    // Divide la workArea a metà orizzontalmente (Riga Superiore e Riga Inferiore)
-    auto topRow = workArea.removeFromTop(workArea.getHeight() / 2);
-    auto bottomRow = workArea; // Quello che avanza è la riga inferiore
-
-    // Crea un array di 4 "Celle" (Rettangoli) per ospitare le manopole
-    juce::Rectangle<int> celleManopole[4];
-
-    celleManopole[0] = topRow.removeFromLeft(topRow.getWidth() / 2); // Cella in alto a SX
-    celleManopole[1] = topRow;                                       // Cella in alto a DX
-
-    celleManopole[2] = bottomRow.removeFromLeft(bottomRow.getWidth() / 2); // Cella in basso a SX
-    celleManopole[3] = bottomRow;                                          // Cella in basso a DX
-
-    // Posiziona le manopole all'interno delle rispettive celle
-    int maxKnobSize = 100;
-    int minKnobSize = 65;
-
-    for (int i = 0; i < numManopole; ++i)
-    {
-        // Usa la logica di adattamento dinamico
-        int calculatedSize = juce::jmin(celleManopole[i].getWidth(), celleManopole[i].getHeight() - 25, maxKnobSize);
-        int dynamicKnobSize = juce::jmax(minKnobSize, calculatedSize);
-
-        // Centra il riquadro della manopola all'interno della sua cella specifica
-        auto manopolaBounds = celleManopole[i].withSizeKeepingCentre(dynamicKnobSize, dynamicKnobSize);
-
-        manopolaEffetto[i].setBounds(manopolaBounds);
-        titoloManopolaEffetto[i].setBounds(manopolaBounds.getX(), manopolaBounds.getY() - 25, dynamicKnobSize, 20);
-    }
+            titoloManopolaEffetto[i].setBounds(manopolaBounds.getX(), manopolaBounds.getY() - (12 * scale), dynamicKnobSize, 20 * scale);
+            // Scala il font dei titoli
+            titoloManopolaEffetto[i].setFont(juce::FontOptions(10.0f * scale));
+        }
+    #pragma endregion
 }
 
 #pragma endregion
@@ -353,17 +350,22 @@ void StringUIdemoAudioProcessorEditor::updateAllTuningLabels()
 //==============================================================================
 void StringUIdemoAudioProcessorEditor::SetTitle(juce::Graphics& g)
 {
+    float scale = (float)getWidth() / 750.0f;
+
     g.setColour(juce::Colours::white.withAlpha(0.85f));
-    g.setFont(juce::FontOptions(18.0f, juce::Font::bold));
+    // Scaliamo il font del titolo (da 18 a 18 * scale)
+    g.setFont(juce::FontOptions(18.0f * scale, juce::Font::bold));
+
     g.drawText("String UI Demo - pizzica le corde!",
-        0, 10, getWidth(), 30, juce::Justification::centred);
+        0, 5 * scale, getWidth(), 30 * scale, juce::Justification::centred);
 }
 
 void StringUIdemoAudioProcessorEditor::SetLineaSeparatrice(juce::Graphics& g)
 {
-    auto stringsAreaY = getHeight() - (StringUIdemoAudioProcessor::numStrings * 30 + 16);
+    // Usiamo il bordo dell'areaCordeSotto calcolata nel resized! È molto più sicuro.
+    float lineaY = areaCordeSotto.getY() - 4.0f;
     g.setColour(juce::Colour(0xFF4D453A));
-    g.drawHorizontalLine(stringsAreaY - 4, 10.0f, (float)getWidth() - 10.0f);
+    g.drawHorizontalLine((int)lineaY, 10.0f, (float)getWidth() - 10.0f);
 }
 
 void StringUIdemoAudioProcessorEditor::SetStrings(juce::Graphics& g)
