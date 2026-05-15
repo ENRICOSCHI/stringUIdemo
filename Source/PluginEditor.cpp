@@ -102,8 +102,22 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     if (auto* constrainer = getConstrainer())
         constrainer->setFixedAspectRatio(1280.0 / 720.0);
 
+    #pragma region Timer
+
 	// Avvio il timer per controllare le interazioni Audio Thread -> UI Thread (per la MIDI)
 	startTimerHz(60); // Timer che scade 60 volte al secondo (ogni ~16ms)
+
+    #pragma endregion
+
+    #pragma region Attachments
+    
+    driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+		audioProcessor.apvts, "drive", manopolaEffettoDrive);
+
+	gainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+		audioProcessor.apvts, "gain", manopolaEffettoGain);
+
+    #pragma endregion
 }
 
 StringUIdemoAudioProcessorEditor::~StringUIdemoAudioProcessorEditor() 
