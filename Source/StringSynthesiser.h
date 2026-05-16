@@ -52,24 +52,35 @@ public:
 
 private:
 
+    /// <summary>
+    /// Riempie excitationSample con un buffer di rumore che simula il colpo iniziale sulla corda 
+    /// Il "burst" di energia che poi il delay line di Karplus-Strong fa rimbalzare in loop.
+    /// </summary>
     void generateExcitation() {
         float lastSample = 0.0f;
         float maxVal = 0.0f;
 
         for (size_t i = 0; i < currentDelayLength; ++i)
         {
+            //genera rumore bianco casuale tra -1 e 1 (ogni campione è indipendente dal precedente)
             float noise = (juce::Random::getSystemRandom().nextFloat() * 2.0f) - 1.0f;
+            //media pesata tra il campione nuovo e il precedente
+            //dove 1 = plettro e 0 = dito
+            //un po' come un filtro passa-basso di primo ordine
+            //dove più l'hardness è bassa e più taglia gli acuti
             float shaped = noise * currentHardness + lastSample * (1.0f - currentHardness);
             excitationSample[i] = shaped;
+            //tengo traccia del valore precedente (per il filtro)
             lastSample = shaped;
+            //e del valore massimo raggiunto per la normalizzazione
             maxVal = std::max(maxVal, std::abs(shaped));
         }
 
-        // Normalizza: riporta sempre il picco a 1.0 indipendentemente dall'hardness
+        //normalizzo per evitare l'abbassamento di volume
         if (maxVal > 0.0f)
         {
             for (size_t i = 0; i < currentDelayLength; ++i)
-                excitationSample[i] /= maxVal;
+                excitationSample[i] /= maxVal;//divido il buffer per il valore massimo così da avere il picco sempre a 1 
         }
     }
 
