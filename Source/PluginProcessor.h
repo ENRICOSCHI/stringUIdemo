@@ -90,6 +90,9 @@ private:
 	std::atomic<float>* driveParameter = nullptr;
     std::atomic<float>* gainParameter = nullptr;
     std::atomic<float>* hardnessParameter = nullptr;
+    std::atomic<float>* dampingParameter = nullptr;
+    std::atomic<float>* sustainParameter = nullptr;
+
 
     #pragma endregion
 

@@ -494,8 +494,7 @@ void StringUIdemoAudioProcessorEditor::SetTitle(juce::Graphics& g)
     // Scaliamo il font del titolo (da 18 a 18 * scale)
     g.setFont(juce::FontOptions(18.0f * scale, juce::Font::bold));
 
-    g.drawText("String UI Demo - pizzica le corde!",
-        0, 5 * scale, getWidth(), 30 * scale, juce::Justification::centred);
+    g.drawText("MODELLAZIONE FISICA CHITTARA", 0, 5 * scale, getWidth(), 30 * scale, juce::Justification::centred);      
 }
 
 void StringUIdemoAudioProcessorEditor::SetLineaSeparatrice(juce::Graphics& g)

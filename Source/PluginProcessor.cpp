@@ -36,6 +36,8 @@ StringUIdemoAudioProcessor::StringUIdemoAudioProcessor()
     driveParameter = apvts.getRawParameterValue("drive");
     gainParameter = apvts.getRawParameterValue("gain");
     hardnessParameter = apvts.getRawParameterValue("hardness");
+    dampingParameter = apvts.getRawParameterValue("damping");
+    sustainParameter = apvts.getRawParameterValue("sustain");
 
 #pragma endregion
 }
@@ -67,6 +69,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::
 	params.push_back(std::make_unique<juce::AudioParameterFloat>("drive", "Drive", 1.0f, 10.0f, 1.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("gain", "Gain", 0.0f, 1.0f, 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("hardness", "Hardness", 0.01f, 1.0f, 0.5f)); //non min = 0 perchè altrimenti si muta l'audio
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("damping", "Damping", 0.0f, 1.0f, 1.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 1.0f));
 
 	return { params.begin(), params.end() };
 }
@@ -266,11 +270,15 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     buffer.clear();
 
     float* channelData = buffer.getWritePointer(0);
+    
 
-    //Assegno l'hardness su tutte le corde
-    float currentHardness = hardnessParameter->load();
-    for (int i = 0; i < stringSynths.size(); ++i)
-        stringSynths.getUnchecked(i)->SetHardness(currentHardness);
+    for (int i = 0; i < stringSynths.size(); ++i) {
+        //Assegno l'hardness corrente su tutte le corde
+        stringSynths.getUnchecked(i)->SetHardness(hardnessParameter->load());
+        //assegno i valori attuali di damp e sustain
+        stringSynths.getUnchecked(i)->SetDamping(dampingParameter->load());
+        stringSynths.getUnchecked(i)->SetSustain(sustainParameter->load());
+    }
 
     for (int i = 0; i < stringSynths.size(); ++i)
         stringSynths.getUnchecked(i)->generateAndAddData(channelData, buffer.getNumSamples());

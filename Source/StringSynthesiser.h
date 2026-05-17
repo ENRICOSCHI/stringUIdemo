@@ -13,7 +13,15 @@ public:
     }
 
     void SetHardness(float h) {
-        currentHardness = juce::jlimit(0.0f, 1.0f, h);
+        currentHardness = juce::jlimit(0.01f, 1.0f, h);
+    }
+
+    void SetDamping(float d) {
+        currentDamping = juce::jlimit(0.0f,1.0f,d);
+    }
+
+    void SetSustain(float s) {
+        currentSustain = juce::jlimit(0.0f, 1.0f, s);
     }
 
     void stringPlucked(float pluckPosition)
@@ -28,10 +36,21 @@ public:
         if (doPluckForNextBuffer.compareAndSetBool(0, 1))
             exciteInternalBuffer();
 
+        //damping
+        float dampCoeff = currentDamping * 0.5f;
+
         for (int i = 0; i < numSamples; ++i)
         {
             auto nextPos = (pos + 1) % currentDelayLength;
-            delayLine[nextPos] = (float)(decay * 0.5 * (delayLine[nextPos] + delayLine[pos]));
+            
+            //filtraggio damping
+            float filtered = delayLine[pos] * (1.0f - dampCoeff) + delayLine[nextPos] * dampCoeff;
+
+            //sustain: feedback gain tra 0.9f e 0.099f
+            float feedbackGain = 0.9f + currentSustain * 0.099f;
+
+            delayLine[nextPos] = filtered * feedbackGain;
+
             outBuffer[i] += delayLine[pos];
             pos = nextPos;
         }
@@ -62,12 +81,12 @@ private:
 
         for (size_t i = 0; i < currentDelayLength; ++i)
         {
-            //genera rumore bianco casuale tra -1 e 1 (ogni campione è indipendente dal precedente)
+            //genera rumore bianco casuale tra -1 e 1 (ogni campione Ã¨ indipendente dal precedente)
             float noise = (juce::Random::getSystemRandom().nextFloat() * 2.0f) - 1.0f;
             //media pesata tra il campione nuovo e il precedente
             //dove 1 = plettro e 0 = dito
             //un po' come un filtro passa-basso di primo ordine
-            //dove più l'hardness è bassa e più taglia gli acuti
+            //dove piÃ¹ l'hardness Ã¨ bassa e piÃ¹ taglia gli acuti
             float shaped = noise * currentHardness + lastSample * (1.0f - currentHardness);
             excitationSample[i] = shaped;
             //tengo traccia del valore precedente (per il filtro)
@@ -80,7 +99,7 @@ private:
         if (maxVal > 0.0f)
         {
             for (size_t i = 0; i < currentDelayLength; ++i)
-                excitationSample[i] /= maxVal;//divido il buffer per il valore massimo così da avere il picco sempre a 1 
+                excitationSample[i] /= maxVal;//divido il buffer per il valore massimo cosÃ¬ da avere il picco sempre a 1 
         }
     }
 
@@ -99,6 +118,8 @@ private:
     double amplitude = 0.0;
 
     float currentHardness = 0.5f;
+    float currentDamping = 0.5f;
+    float currentSustain = 0.8f;
 
     juce::Atomic<int> doPluckForNextBuffer;
     std::vector<float> excitationSample, delayLine;
