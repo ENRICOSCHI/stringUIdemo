@@ -93,9 +93,15 @@ private:
     std::atomic<float>* hardnessParameter = nullptr;
     std::atomic<float>* dampingParameter = nullptr;
     std::atomic<float>* sustainParameter = nullptr;
+    std::atomic<float>* revMixParameter = nullptr;
+    std::atomic<float>* revSizeParameter = nullptr;
 
 
     #pragma endregion
+
+    // Modulo Riverbero di JUCE
+    juce::Reverb reverb;
+    juce::Reverb::Parameters reverbParams;
 
 
     // Nota MIDI base per ciascuna corda (modificabile dal tuning UI)

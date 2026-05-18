@@ -38,6 +38,8 @@ StringUIdemoAudioProcessor::StringUIdemoAudioProcessor()
     hardnessParameter = apvts.getRawParameterValue("hardness");
     dampingParameter = apvts.getRawParameterValue("damping");
     sustainParameter = apvts.getRawParameterValue("sustain");
+    revMixParameter = apvts.getRawParameterValue("revMix");
+    revSizeParameter = apvts.getRawParameterValue("revSize");
 
 #pragma endregion
 }
@@ -71,6 +73,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::
     params.push_back(std::make_unique<juce::AudioParameterFloat>("hardness", "Hardness", 0.01f, 1.0f, 0.5f)); //non min = 0 perchè altrimenti si muta l'audio
     params.push_back(std::make_unique<juce::AudioParameterFloat>("damping", "Damping", 0.0f, 1.0f, 1.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 1.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("revMix", "Rev Mix", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("revSize", "Rev Size", 0.0f, 1.0f, 0.5f));
 
 	return { params.begin(), params.end() };
 }
@@ -185,8 +189,10 @@ void StringUIdemoAudioProcessor::prepareToPlay(double sampleRate, int /*samplesP
     for (int i = 0; i < numStrings; ++i)
     {
         double freq = juce::MidiMessage::getMidiNoteInHertz(currentMidiNotes[i]);
-        stringSynths.add(new StringSynthesiser(sampleRate, freq,hardnessParameter->load()));
+        stringSynths.add(new StringSynthesiser(sampleRate, freq, hardnessParameter->load()));
     }
+    // Inizializza il Sample Rate del riverbero
+    reverb.setSampleRate(sampleRate);
 }
 
 void StringUIdemoAudioProcessor::releaseResources()
@@ -323,6 +329,33 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 			channelData[numSample] = std::tanh(channelData[numSample] * appliedDrive) * currentGain;
         }
     }
+
+    #pragma endregion
+
+    #pragma region Aggiunta Reverb
+
+        // 1. Aggiorniamo i parametri del riverbero leggendo i valori dalle manopole
+        float mix = revMixParameter->load();
+
+        reverbParams.roomSize = revSizeParameter->load(); // Da 0.0 (stanza piccola) a 1.0 (chiesa)
+        reverbParams.damping = 0.5f; // Fisso, oppure potresti aggiungere una manopola in futuro
+        reverbParams.width = 1.0f;   // Massima ampiezza stereo
+
+        // Calcolo Dry/Wet: se Mix è 0, senti solo chitarra; se Mix è 1, senti solo riverbero
+        reverbParams.dryLevel = 1.0f - mix;
+        reverbParams.wetLevel = mix;
+
+        reverb.setParameters(reverbParams);
+
+        // 2. Applichiamo il riverbero
+        // La classe Reverb di JUCE ha un metodo comodissimo che processa direttamente i canali L e R assieme
+        if (buffer.getNumChannels() >= 2)
+        {
+            float* leftChannel = buffer.getWritePointer(0);
+            float* rightChannel = buffer.getWritePointer(1);
+
+            reverb.processStereo(leftChannel, rightChannel, buffer.getNumSamples());
+        }
 
     #pragma endregion
 
