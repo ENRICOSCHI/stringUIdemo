@@ -95,13 +95,19 @@ private:
     std::atomic<float>* sustainParameter = nullptr;
     std::atomic<float>* revMixParameter = nullptr;
     std::atomic<float>* revSizeParameter = nullptr;
-
+    std::atomic<float>* delayTimeParameter = nullptr;
+    std::atomic<float>* delayFbParameter = nullptr;
 
     #pragma endregion
 
     // Modulo Riverbero di JUCE
     juce::Reverb reverb;
     juce::Reverb::Parameters reverbParams;
+
+    // Variabili per il Delay
+    juce::AudioBuffer<float> delayBuffer;
+    int delayWritePosition = 0;
+    double currentSampleRate = 44100.0;
 
 
     // Nota MIDI base per ciascuna corda (modificabile dal tuning UI)

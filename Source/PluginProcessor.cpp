@@ -40,6 +40,8 @@ StringUIdemoAudioProcessor::StringUIdemoAudioProcessor()
     sustainParameter = apvts.getRawParameterValue("sustain");
     revMixParameter = apvts.getRawParameterValue("revMix");
     revSizeParameter = apvts.getRawParameterValue("revSize");
+    delayTimeParameter = apvts.getRawParameterValue("delayTime");
+    delayFbParameter = apvts.getRawParameterValue("delayFb");
 
 #pragma endregion
 }
@@ -75,6 +77,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::
     params.push_back(std::make_unique<juce::AudioParameterFloat>("sustain", "Sustain", 0.0f, 1.0f, 1.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("revMix", "Rev Mix", 0.0f, 1.0f, 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("revSize", "Rev Size", 0.0f, 1.0f, 0.5f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("delayTime", "Time", 0.01f, 1.5f, 0.4f)); // Time va da 0.01 secondi (slapback) a 1.5 secondi (eco lungo)
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("delayFb", "Feedback", 0.0f, 0.95f, 0.5f)); // Il feedback arriva massimo a 0.95 per evitare fischi infiniti
+    /*
+    * 
+    */
 
 	return { params.begin(), params.end() };
 }
@@ -185,6 +192,16 @@ void StringUIdemoAudioProcessor::changeProgramName(int, const juce::String&) {}
 void StringUIdemoAudioProcessor::prepareToPlay(double sampleRate, int /*samplesPerBlock*/)
 {
     stringSynths.clear();
+
+    // --- Inizializzazione Delay ---
+    currentSampleRate = sampleRate;
+
+    // Creiamo un buffer lungo 2 secondi (il massimo tempo possibile + margine)
+    int delayBufferSize = (int)(sampleRate * 2.0);
+    delayBuffer.setSize(getTotalNumOutputChannels(), delayBufferSize);
+    delayBuffer.clear(); // Svuotiamo la memoria dai "rumori" fantasma
+
+    delayWritePosition = 0;
 
     for (int i = 0; i < numStrings; ++i)
     {
@@ -329,6 +346,55 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 			channelData[numSample] = std::tanh(channelData[numSample] * appliedDrive) * currentGain;
         }
     }
+
+    #pragma endregion
+
+    #pragma region Aggiunta Delay
+
+        // 1. Leggiamo i parametri dalla UI
+        float timeInSeconds = delayTimeParameter->load();
+        float feedback = delayFbParameter->load();
+
+        // Calcoliamo a quanti "campioni" corrisponde il ritardo in secondi
+        int delayLengthInSamples = (int)(timeInSeconds * currentSampleRate);
+        int delayBufferLength = delayBuffer.getNumSamples();
+
+        // 2. Ciclo sui canali (L e R)
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* channelData = buffer.getWritePointer(ch);
+            // Assicuriamoci di leggere il canale giusto anche nel delayBuffer
+            auto* delayData = delayBuffer.getWritePointer(ch % delayBuffer.getNumChannels());
+
+            // Copiamo la posizione di scrittura per questo specifico canale
+            int localWritePosition = delayWritePosition;
+
+            for (int i = 0; i < buffer.getNumSamples(); ++i)
+            {
+                // Calcoliamo la testina di lettura (indietro nel tempo rispetto alla scrittura)
+                int readPosition = localWritePosition - delayLengthInSamples;
+                if (readPosition < 0)
+                    readPosition += delayBufferLength; // Se andiamo sotto zero, facciamo il giro del ring buffer
+
+                // Prendiamo il campione ritardato (l'eco)
+                float delayedSample = delayData[readPosition];
+
+                // Scriviamo nel "nastro" il suono attuale + l'eco attenuato (Feedback)
+                delayData[localWritePosition] = channelData[i] + (delayedSample * feedback);
+
+                // Aggiungiamo l'eco al suono originale in uscita (Mix al 50%)
+                channelData[i] += delayedSample * 0.5f;
+
+                // Avanziamo la testina di scrittura locale di 1 step
+                localWritePosition++;
+                if (localWritePosition >= delayBufferLength)
+                    localWritePosition = 0;
+            }
+        }
+
+        // 3. Finito il blocco audio, aggiorniamo la posizione di scrittura globale per il prossimo giro
+        delayWritePosition += buffer.getNumSamples();
+        delayWritePosition %= delayBufferLength;
 
     #pragma endregion
 
