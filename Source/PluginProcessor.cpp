@@ -42,6 +42,7 @@ StringUIdemoAudioProcessor::StringUIdemoAudioProcessor()
     revSizeParameter = apvts.getRawParameterValue("revSize");
     delayTimeParameter = apvts.getRawParameterValue("delayTime");
     delayFbParameter = apvts.getRawParameterValue("delayFb");
+    masterVolumeParameter = apvts.getRawParameterValue("masterVolume");
 
 #pragma endregion
 }
@@ -79,6 +80,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::
     params.push_back(std::make_unique<juce::AudioParameterFloat>("revSize", "Rev Size", 0.0f, 1.0f, 0.5f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("delayTime", "Time", 0.01f, 1.5f, 0.4f)); // Time va da 0.01 secondi (slapback) a 1.5 secondi (eco lungo)
     params.push_back(std::make_unique<juce::AudioParameterFloat>("delayFb", "Feedback", 0.0f, 0.95f, 0.5f)); // Il feedback arriva massimo a 0.95 per evitare fischi infiniti
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("masterVolume", "Master Volume", 0.0f, 1.0f, 0.5f));
     /*
     * 
     */
@@ -425,7 +427,18 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     #pragma endregion
 
-	// Se è aperta l'interfaccia grafica, passo il buffer all'oscilloscopio per visualizzare le onde sonore
+    #pragma region Applicazione Master Volume
+        float masterVolume = masterVolumeParameter->load();
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+		    auto* channelData = buffer.getWritePointer(ch);
+            for (int numSample = 0; numSample < buffer.getNumSamples(); ++numSample) {
+                channelData[numSample] *= masterVolume; // Applico il volume finale
+            }
+	    }
+    #pragma endregion
+    
+
+    // Se è aperta l'interfaccia grafica, passo il buffer all'oscilloscopio per visualizzare le onde sonore
     if (puntatoreOscilloscopio != nullptr)
     {
         // pushBuffer prende l'intero blocco audio e lo disegna

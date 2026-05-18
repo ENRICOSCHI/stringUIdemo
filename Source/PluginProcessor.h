@@ -97,6 +97,7 @@ private:
     std::atomic<float>* revSizeParameter = nullptr;
     std::atomic<float>* delayTimeParameter = nullptr;
     std::atomic<float>* delayFbParameter = nullptr;
+    std::atomic<float>* masterVolumeParameter = nullptr;
 
     #pragma endregion
 

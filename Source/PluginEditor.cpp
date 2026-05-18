@@ -160,7 +160,7 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
     revSizeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.apvts, "revSize", manopolaEffetto[8]);
     masterAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "master", manopolaEffetto[9]);
+        audioProcessor.apvts, "masterVolume", manopolaEffetto[9]);
 
     #pragma endregion
 }
