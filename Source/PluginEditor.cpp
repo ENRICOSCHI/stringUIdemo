@@ -230,16 +230,20 @@ void StringUIdemoAudioProcessorEditor::paint(juce::Graphics& g)
     SetSeparationFret(g);
 
     #pragma region Disegno suddivisione delle aree
-        // Imposta un colore semitrasparente per evidenziare le aree
-        g.setColour(juce::Colours::white.withAlpha(0.2f));
+    // Usiamo il tuo colore marrone/grigio (lo stesso della linea separatrice)
+    // ma aggiungiamo un po' di trasparenza (0.4f) per fonderlo morbidamente con lo sfondo nero/marrone.
+    g.setColour(juce::Colour(0xFF4D453A).withAlpha(0.4f));
 
-        // Disegna un bordo per ognuno dei riquadri
-        g.drawRect(areaOscilloscopio.reduced(4), 2.0f);
-        g.drawRect(areaMaster.reduced(4), 2.0f);
-        g.drawRect(areaParametriFisici.reduced(4), 2.0f);
-        g.drawRect(areaDelay.reduced(4), 2.0f);
-        g.drawRect(areaDistortion.reduced(4), 2.0f);
-        g.drawRect(areaReverb.reduced(4), 2.0f);
+    // Riempiamo le aree con rettangoli arrotondati invece di usare drawRect.
+    // Nota: fillRoundedRectangle richiede coordinate float, quindi usiamo .toFloat()
+    float cornerRadius = 8.0f; // Smussatura degli angoli (più è alto, più è rotondo)
+
+    g.fillRoundedRectangle(areaOscilloscopio.reduced(4).toFloat(), cornerRadius);
+    g.fillRoundedRectangle(areaMaster.reduced(4).toFloat(), cornerRadius);
+    g.fillRoundedRectangle(areaParametriFisici.reduced(4).toFloat(), cornerRadius);
+    g.fillRoundedRectangle(areaDelay.reduced(4).toFloat(), cornerRadius);
+    g.fillRoundedRectangle(areaDistortion.reduced(4).toFloat(), cornerRadius);
+    g.fillRoundedRectangle(areaReverb.reduced(4).toFloat(), cornerRadius);
     #pragma endregion
 }
 
