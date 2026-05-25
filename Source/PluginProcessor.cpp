@@ -43,6 +43,9 @@ StringUIdemoAudioProcessor::StringUIdemoAudioProcessor()
     delayTimeParameter = apvts.getRawParameterValue("delayTime");
     delayFbParameter = apvts.getRawParameterValue("delayFb");
     masterVolumeParameter = apvts.getRawParameterValue("masterVolume");
+	delayOnParameter = apvts.getRawParameterValue("delayOn");
+	distOnParameter = apvts.getRawParameterValue("distOn");
+	revOnParameter = apvts.getRawParameterValue("revOn");
 
 #pragma endregion
 }
@@ -84,6 +87,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::
     
     params.push_back(std::make_unique<juce::AudioParameterInt>("delayFb", "Feedback", 0, 95, 50)); // Il feedback arriva massimo a 0.95 per evitare fischi infiniti
     params.push_back(std::make_unique<juce::AudioParameterInt>("masterVolume", "Master Volume", 0, 100, 50));
+
+    // Aggiungi questi insieme agli altri params.push_back(...)
+    params.push_back(std::make_unique<juce::AudioParameterBool>("delayOn", "Delay On", true));
+    params.push_back(std::make_unique<juce::AudioParameterBool>("distOn", "Distortion On", true));
+    params.push_back(std::make_unique<juce::AudioParameterBool>("revOn", "Reverb On", true));
     /*
     * 
     */
@@ -318,114 +326,129 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     #pragma region Aggiunta Distorsione
 
-    #pragma region Variabili di distorsione
+        // Se il parametro "Distortion On" è disattivato, salto tutta la sezione di distorsione
+        if (distOnParameter->load() >= 0.5f)
+        {
+            #pragma region Variabili di distorsione
 
-    // serve a decidere la ripidità della tangente iperbolica (più alto = più distorto)
-	float currentDrive = driveParameter->load(); 
+                // serve a decidere la ripidità della tangente iperbolica (più alto = più distorto)
+                float currentDrive = driveParameter->load();
 
-    // serve a compensare l'aumento di volume intrinseco dell'operazione di distorsione
-	float currentGain = gainParameter->load(); 
+                // serve a compensare l'aumento di volume intrinseco dell'operazione di distorsione
+                float currentGain = gainParameter->load();
 
-    /* Nota:
-        Per accedere ai valori dei parametri non passiamo per l'APVTS (relativamente lento), bensi' ci affidiamo
-		ai puntatori atomici definiti nel "PluginProcessor.h" e inizializzati nel costruttore.
-        Ciò è possibile poiché nel costruttore abbiamo passato i puntatori raw (dei parametri della APVTS)
-        ai nostri puntatori atomici.
-    */
+                /* Nota:
+                    Per accedere ai valori dei parametri non passiamo per l'APVTS (relativamente lento), bensi' ci affidiamo
+                    ai puntatori atomici definiti nel "PluginProcessor.h" e inizializzati nel costruttore.
+                    Ciò è possibile poiché nel costruttore abbiamo passato i puntatori raw (dei parametri della APVTS)
+                    ai nostri puntatori atomici.
+                */
 
-    // (Amplifico al cubo per ottenere un effetto di drive più marcato)
-    float appliedDrive = currentDrive * currentDrive * currentDrive;
+                // (Amplifico al cubo per ottenere un effetto di drive più marcato)
+                float appliedDrive = currentDrive * currentDrive * currentDrive;
 
-    #pragma endregion
+            #pragma endregion
 
-    // Ciclo per ogni canale...
-    for (int ch = 0; ch < buffer.getNumChannels(); ++ch) {
+            // Ciclo per ogni canale...
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch) 
+            {
+                // Accedo tramite puntatore al buffer del canale
+                auto* channelData = buffer.getWritePointer(ch);
 
-		// Accedo tramite puntatore al buffer del canale
-		auto* channelData = buffer.getWritePointer(ch);
-
-		// Quindi applico la distorsione sample per sample nel buffer del canale
-        for (int numSample = 0; numSample < buffer.getNumSamples(); ++numSample) {
-
-            // Soft Clipping via tangente iperbolica.
-			channelData[numSample] = std::tanh(channelData[numSample] * appliedDrive) * currentGain;
+                // Quindi applico la distorsione sample per sample nel buffer del canale
+                for (int numSample = 0; numSample < buffer.getNumSamples(); ++numSample) 
+                {
+                    // Soft Clipping via tangente iperbolica.
+                    channelData[numSample] = std::tanh(channelData[numSample] * appliedDrive) * currentGain;
+                }
+            }
         }
-    }
-
     #pragma endregion
 
     #pragma region Aggiunta Delay
 
-        // 1. Leggiamo i parametri dalla UI
-        float timeInSeconds = delayTimeParameter->load();
-        float feedback = delayFbParameter->load() / 100.0f;
-
-        // Calcoliamo a quanti "campioni" corrisponde il ritardo in secondi
-        int delayLengthInSamples = (int)(timeInSeconds * currentSampleRate);
-        int delayBufferLength = delayBuffer.getNumSamples();
-
-        // 2. Ciclo sui canali (L e R)
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        if (delayOnParameter->load() >= 0.5f)
         {
-            auto* channelData = buffer.getWritePointer(ch);
-            // Assicuriamoci di leggere il canale giusto anche nel delayBuffer
-            auto* delayData = delayBuffer.getWritePointer(ch % delayBuffer.getNumChannels());
+            // 1. Leggiamo i parametri dalla UI
+            float timeInSeconds = delayTimeParameter->load();
+            float feedback = delayFbParameter->load() / 100.0f;
 
-            // Copiamo la posizione di scrittura per questo specifico canale
-            int localWritePosition = delayWritePosition;
+            // Calcoliamo a quanti "campioni" corrisponde il ritardo in secondi
+            int delayLengthInSamples = (int)(timeInSeconds * currentSampleRate);
+            int delayBufferLength = delayBuffer.getNumSamples();
 
-            for (int i = 0; i < buffer.getNumSamples(); ++i)
+            // 2. Ciclo sui canali (L e R)
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             {
-                // Calcoliamo la testina di lettura (indietro nel tempo rispetto alla scrittura)
-                int readPosition = localWritePosition - delayLengthInSamples;
-                if (readPosition < 0)
-                    readPosition += delayBufferLength; // Se andiamo sotto zero, facciamo il giro del ring buffer
+                auto* channelData = buffer.getWritePointer(ch);
+                // Assicuriamoci di leggere il canale giusto anche nel delayBuffer
+                auto* delayData = delayBuffer.getWritePointer(ch % delayBuffer.getNumChannels());
 
-                // Prendiamo il campione ritardato (l'eco)
-                float delayedSample = delayData[readPosition];
+                // Copiamo la posizione di scrittura per questo specifico canale
+                int localWritePosition = delayWritePosition;
 
-                // Scriviamo nel "nastro" il suono attuale + l'eco attenuato (Feedback)
-                delayData[localWritePosition] = channelData[i] + (delayedSample * feedback);
+                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                {
+                    // Calcoliamo la testina di lettura (indietro nel tempo rispetto alla scrittura)
+                    int readPosition = localWritePosition - delayLengthInSamples;
+                    if (readPosition < 0)
+                        readPosition += delayBufferLength; // Se andiamo sotto zero, facciamo il giro del ring buffer
 
-                // Aggiungiamo l'eco al suono originale in uscita (Mix al 50%)
-                channelData[i] += delayedSample * 0.5f;
+                    // Prendiamo il campione ritardato (l'eco)
+                    float delayedSample = delayData[readPosition];
 
-                // Avanziamo la testina di scrittura locale di 1 step
-                localWritePosition++;
-                if (localWritePosition >= delayBufferLength)
-                    localWritePosition = 0;
+                    // Scriviamo nel "nastro" il suono attuale + l'eco attenuato (Feedback)
+                    delayData[localWritePosition] = channelData[i] + (delayedSample * feedback);
+
+                    // Aggiungiamo l'eco al suono originale in uscita (Mix al 50%)
+                    channelData[i] += delayedSample * 0.5f;
+
+                    // Avanziamo la testina di scrittura locale di 1 step
+                    localWritePosition++;
+                    if (localWritePosition >= delayBufferLength)
+                        localWritePosition = 0;
+                }
             }
-        }
 
-        // 3. Finito il blocco audio, aggiorniamo la posizione di scrittura globale per il prossimo giro
-        delayWritePosition += buffer.getNumSamples();
-        delayWritePosition %= delayBufferLength;
+            // 3. Finito il blocco audio, aggiorniamo la posizione di scrittura globale per il prossimo giro
+            delayWritePosition += buffer.getNumSamples();
+            delayWritePosition %= delayBufferLength;
+        }
+        else
+        {
+		    // Se il delay è spento, assicuriamoci di avanzare comunque la posizione di scrittura per mantenere la coerenza del buffer
+		    delayWritePosition += buffer.getNumSamples();
+		    delayWritePosition %= delayBuffer.getNumSamples();
+        }
 
     #pragma endregion
 
     #pragma region Aggiunta Reverb
 
-        // 1. Aggiorniamo i parametri del riverbero leggendo i valori dalle manopole
-        float mix = revMixParameter->load() / 100.0f;
-
-        reverbParams.roomSize = revSizeParameter->load() / 100.0f; // Da 0.0 (stanza piccola) a 1.0 (chiesa)
-        reverbParams.damping = 0.5f; // Fisso, oppure potresti aggiungere una manopola in futuro
-        reverbParams.width = 1.0f;   // Massima ampiezza stereo
-
-        // Calcolo Dry/Wet: se Mix è 0, senti solo chitarra; se Mix è 1, senti solo riverbero
-        reverbParams.dryLevel = 1.0f - mix;
-        reverbParams.wetLevel = mix;
-
-        reverb.setParameters(reverbParams);
-
-        // 2. Applichiamo il riverbero
-        // La classe Reverb di JUCE ha un metodo comodissimo che processa direttamente i canali L e R assieme
-        if (buffer.getNumChannels() >= 2)
+        if (revOnParameter->load() >= 0.5f)
         {
-            float* leftChannel = buffer.getWritePointer(0);
-            float* rightChannel = buffer.getWritePointer(1);
+            // 1. Aggiorniamo i parametri del riverbero leggendo i valori dalle manopole
+            float mix = revMixParameter->load() / 100.0f;
 
-            reverb.processStereo(leftChannel, rightChannel, buffer.getNumSamples());
+            reverbParams.roomSize = revSizeParameter->load() / 100.0f; // Da 0.0 (stanza piccola) a 1.0 (chiesa)
+            reverbParams.damping = 0.5f; // Fisso, oppure potresti aggiungere una manopola in futuro
+            reverbParams.width = 1.0f;   // Massima ampiezza stereo
+
+            // Calcolo Dry/Wet: se Mix è 0, senti solo chitarra; se Mix è 1, senti solo riverbero
+            reverbParams.dryLevel = 1.0f - mix;
+            reverbParams.wetLevel = mix;
+
+            reverb.setParameters(reverbParams);
+
+            // 2. Applichiamo il riverbero
+            // La classe Reverb di JUCE ha un metodo comodissimo che processa direttamente i canali L e R assieme
+            if (buffer.getNumChannels() >= 2)
+            {
+                float* leftChannel = buffer.getWritePointer(0);
+                float* rightChannel = buffer.getWritePointer(1);
+
+                reverb.processStereo(leftChannel, rightChannel, buffer.getNumSamples());
+            }
         }
 
     #pragma endregion

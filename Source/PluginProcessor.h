@@ -103,6 +103,12 @@ private:
     std::atomic<float>* delayFbParameter = nullptr;
     std::atomic<float>* masterVolumeParameter = nullptr;
 
+    // Puntatori per accensione / spegnimento effetti
+	// Si usano i float come bool perchè l'APVTS gestisce i parametri come float, ma si considerano "on" se >= 0.5f
+	std::atomic<float>* distOnParameter = nullptr;
+	std::atomic<float>* delayOnParameter = nullptr;
+	std::atomic<float>* revOnParameter = nullptr;
+
     #pragma endregion
 
     // Modulo Riverbero di JUCE

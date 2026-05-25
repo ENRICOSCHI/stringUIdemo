@@ -136,28 +136,52 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
 
     #pragma endregion
 
+    #pragma region Setup bottoni On / Off
+
+        juce::TextButton* bypassButtons[] = { &btnDelayOn, &btnDistOn, &btnRevOn };
+        juce::String bypassIDs[] = { "delayOn", "distOn", "revOn" };
+
+        for (int i = 0; i < 3; ++i)
+        {
+            bypassButtons[i]->setClickingTogglesState(true);
+            //bypassButtons[i]->setFont(juce::FontOptions(10.0f, juce::Font::bold));
+            // Colore da spento (grigio scuro)
+            bypassButtons[i]->setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF242424));
+            // Colore da acceso (Il tuo viola neon)
+            bypassButtons[i]->setColour(juce::TextButton::buttonOnColourId, juce::Colours::purple);
+
+            addAndMakeVisible(bypassButtons[i]);
+        }
+
+    #pragma endregion
+
     #pragma region Attachments
 
-    timeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "delayTime", manopolaEffetto[0]);
-    feedbackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "delayFb", manopolaEffetto[1]);
-    driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "drive", manopolaEffetto[2]);
-    gainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "gain", manopolaEffetto[3]);
-    hardnessAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "hardness", manopolaEffetto[4]);
-    dampingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "damping", manopolaEffetto[5]);
-    sustainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "sustain", manopolaEffetto[6]);
-    revMixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "revMix", manopolaEffetto[7]);
-    revSizeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "revSize", manopolaEffetto[8]);
-    masterAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.apvts, "masterVolume", manopolaEffetto[9]);
+        timeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "delayTime", manopolaEffetto[0]);
+        feedbackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "delayFb", manopolaEffetto[1]);
+        driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "drive", manopolaEffetto[2]);
+        gainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "gain", manopolaEffetto[3]);
+        hardnessAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "hardness", manopolaEffetto[4]);
+        dampingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "damping", manopolaEffetto[5]);
+        sustainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "sustain", manopolaEffetto[6]);
+        revMixAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "revMix", manopolaEffetto[7]);
+        revSizeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "revSize", manopolaEffetto[8]);
+        masterAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            audioProcessor.apvts, "masterVolume", manopolaEffetto[9]);
+
+        // Button Attachment
+        atcDelayOn = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "delayOn", btnDelayOn);
+        atcDistOn = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "distOn", btnDistOn);
+        atcRevOn = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.apvts, "revOn", btnRevOn);
 
     #pragma endregion
 }
@@ -203,7 +227,13 @@ void StringUIdemoAudioProcessorEditor::timerCallback()
             #pragma endregion
         }
     }
-
+    #pragma region Aggiornamento testo bottoni On / Off
+        // Il ButtonAttachment aggiorna in automatico il ToggleState
+        btnDelayOn.setButtonText(btnDelayOn.getToggleState() ? "ON" : "OFF");
+        btnDistOn.setButtonText(btnDistOn.getToggleState() ? "ON" : "OFF");
+        btnRevOn.setButtonText(btnRevOn.getToggleState() ? "ON" : "OFF");
+    #pragma endregion
+    
     #pragma region Lettura Volume Meter
         // Leggiamo i decibel (-60 dB silenzio, 0 dB massimo)
         float rmsL = audioProcessor.masterRmsLeft.load();
@@ -437,6 +467,22 @@ void StringUIdemoAudioProcessorEditor::resized()
             titoloManopolaEffetto[i].setBounds(celle[i].getX(), bounds.getY() - (18 * scale), celle[i].getWidth(), 20 * scale);
             titoloManopolaEffetto[i].setFont(juce::FontOptions(14.0f * scale, juce::Font::plain));
         }
+    #pragma endregion
+
+    #pragma region Posizionamento bottoni On/Off
+        int btnW = 30 * scale;
+        int btnH = 15 * scale;
+        int marginX = 10 * scale;
+
+        // Calcoliamo la Y esatta per centrare il bottone verticalmente rispetto al testo del titolo.
+        int delayY = titoloSezione[3].getBounds().getCentreY() - (btnH / 2);
+        int distY = titoloSezione[4].getBounds().getCentreY() - (btnH / 2);
+        int revY = titoloSezione[5].getBounds().getCentreY() - (btnH / 2);
+
+        // Posizioniamoli usando il limite destro dell'area totale (areaDelay, ecc.) e la Y appena calcolata
+        btnDelayOn.setBounds(areaDelay.getRight() - btnW - marginX, delayY, btnW, btnH);
+        btnDistOn.setBounds(areaDistortion.getRight() - btnW - marginX, distY, btnW, btnH);
+        btnRevOn.setBounds(areaReverb.getRight() - btnW - marginX, revY, btnW, btnH);
     #pragma endregion
 
     #pragma region Posizionamento Volume Meter

@@ -127,5 +127,14 @@ private:
     float levelLeftScaled = 0.0f;
 	float levelRightScaled = 0.0f;
 
+	// Pulsanti ON/OFF per effetti
+    juce::TextButton btnDelayOn{ "ON" };
+    juce::TextButton btnDistOn{ "ON" };
+    juce::TextButton btnRevOn{ "ON" };
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> atcDelayOn;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> atcDistOn;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> atcRevOn;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StringUIdemoAudioProcessorEditor)
 };
