@@ -77,6 +77,8 @@ StringUIdemoAudioProcessorEditor::StringUIdemoAudioProcessorEditor(StringUIdemoA
         // Aggiungiamo le voci (Il primo parametro è il nome, il secondo è l'ID univoco che deve partire da 1)
         presetMenu.addItem("Default", 1);
 		presetMenu.addItem("Dream Harp", 2);
+		presetMenu.addItem("Electric", 3);
+		presetMenu.addItem("Bass", 4);
 
 		// Setup dei colori e dell'allineamento del testo
         presetMenu.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF242424));
@@ -686,6 +688,19 @@ void StringUIdemoAudioProcessorEditor::applicaPreset(int presetId)
             }
         };
 
+    // Cambia l'accordatura di tutte le 6 corde
+    // Prende un array di 6 note MIDI (dalla più bassa alla più alta)
+    auto setTuning = [this](int n0, int n1, int n2, int n3, int n4, int n5)
+        {
+            audioProcessor.setStringMidiNote(0, n0);
+            audioProcessor.setStringMidiNote(1, n1);
+            audioProcessor.setStringMidiNote(2, n2);
+            audioProcessor.setStringMidiNote(3, n3);
+            audioProcessor.setStringMidiNote(4, n4);
+            audioProcessor.setStringMidiNote(5, n5);
+            updateAllTuningLabels(); // Aggiorna graficamente i bottoni
+        };
+
     // Usiamo lo switch per applicare il preset scelto
     switch (presetId)
     {
@@ -695,6 +710,9 @@ void StringUIdemoAudioProcessorEditor::applicaPreset(int presetId)
         setParam("revMix", 0.0f); setParam("revSize", 50.0f);
         setParam("hardness", 0.5f); setParam("damping", 100.0f); setParam("sustain", 100.0f);
         setParam("delayOn", 0.0f); setParam("distOn", 0.0f); setParam("revOn", 0.0f);
+
+		// Accordatura Standard Chitarra: E2, A2, D3, G3, B3, E4 (invertita perchè le corde sono ordinate dalla più grave alla più acuta)
+        setTuning(64, 59, 55, 50, 45, 40);
         break;
     case 2: // Dream Harp
         setParam("drive", 1.0f); setParam("gain", 0.10f);
@@ -702,6 +720,29 @@ void StringUIdemoAudioProcessorEditor::applicaPreset(int presetId)
         setParam("revMix", 100.0f); setParam("revSize", 100.0f);
         setParam("hardness",0.01f); setParam("damping", 100.0f); setParam("sustain", 100.0f);
         setParam("delayOn", 1.0f); setParam("distOn", 1.0f); setParam("revOn", 1.0f);
+
+		// Open C: C2, G2, C3, G3, C4, E4 (invertiti perchè le corde sono ordinate dalla più grave alla più acuta)
+        setTuning(64, 60, 55, 48, 43, 36);
+        break;
+    case 3: // Electric
+        setParam("drive", 6.33f); setParam("gain", 0.65f);
+        setParam("delayTime", 0.06f); setParam("delayFb", 10.0f);
+        setParam("revMix", 10.0f); setParam("revSize", 33.0f);
+        setParam("hardness", 1.0f); setParam("damping", 100.0f); setParam("sustain", 100.0f);
+        setParam("delayOn", 1.0f); setParam("distOn", 1.0f); setParam("revOn", 1.0f);
+
+        // Drop D: D2, A2, D3, G3, B3, E4 (invertita perchè le corde sono ordinate dalla più grave alla più acuta)
+        setTuning(64, 59, 55, 50, 45, 38);
+        break;
+    case 4: // Bass
+        setParam("drive", 1.44f); setParam("gain", 0.45f);
+        setParam("delayTime", 0.06f); setParam("delayFb", 5.0f);
+        setParam("revMix", 0.0f); setParam("revSize", 0.0f);
+        setParam("hardness", 0.20f); setParam("damping", 90.0f); setParam("sustain", 80.0f);
+        setParam("delayOn", 1.0f); setParam("distOn", 1.0f); setParam("revOn", 0.0f);
+
+		// Basso Standard: E1, A1, D2, G2, B2, E3 (Tutto un'ottava sotto = -12 semitoni) (invertita perchè le corde sono ordinate dalla più grave alla più acuta)
+        setTuning(52, 47, 43, 38, 33, 28);
         break;
     default: break;
     }
