@@ -732,7 +732,7 @@ void StringUIdemoAudioProcessorEditor::applicaPreset(int presetId)
         setParam("delayOn", 1.0f); setParam("distOn", 1.0f); setParam("revOn", 1.0f);
 
         // Drop D: D2, A2, D3, G3, B3, E4 (invertita perchè le corde sono ordinate dalla più grave alla più acuta)
-        setTuning(64, 59, 55, 50, 45, 38);
+        setTuning(76, 61, 67, 62, 57, 52);
         break;
     case 4: // Bass
         setParam("drive", 1.44f); setParam("gain", 0.45f);
@@ -741,8 +741,8 @@ void StringUIdemoAudioProcessorEditor::applicaPreset(int presetId)
         setParam("hardness", 0.20f); setParam("damping", 90.0f); setParam("sustain", 80.0f);
         setParam("delayOn", 1.0f); setParam("distOn", 1.0f); setParam("revOn", 0.0f);
 
-		// Basso Standard: E1, A1, D2, G2, B2, E3 (Tutto un'ottava sotto = -12 semitoni) (invertita perchè le corde sono ordinate dalla più grave alla più acuta)
-        setTuning(52, 47, 43, 38, 33, 28);
+		
+        setTuning(60, 55, 50, 45, 40, 47);
         break;
     default: break;
     }
