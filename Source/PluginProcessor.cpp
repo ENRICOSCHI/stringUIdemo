@@ -62,7 +62,7 @@ StringUIdemoAudioProcessor::~StringUIdemoAudioProcessor() {}
 /// <remarks>
 /// Il metodo ".push_back(...)" aggiunge semplicemente una nuova entrata alla fine del vector.
 /// (Simile ad un ".Add(...)" nelle List<T> di C#)
-/// Tencincamente la funzione ritorna una tupla di puntatori all'inizio e alla fine del vector.
+/// Tecnicamente la funzione ritorna una tupla di puntatori all'inizio e alla fine del vector.
 /// Sostanzialmete equivale a paasare il vector stesso.
 /// </remarks>
 juce::AudioProcessorValueTreeState::ParameterLayout StringUIdemoAudioProcessor::createParameters() 
@@ -206,7 +206,7 @@ void StringUIdemoAudioProcessor::prepareToPlay(double sampleRate, int /*samplesP
 {
     stringSynths.clear();
 
-    // --- Inizializzazione Delay ---
+    // Inizializzazione Delay
     currentSampleRate = sampleRate;
 
     // Creiamo un buffer lungo 2 secondi (il massimo tempo possibile + margine)
@@ -267,7 +267,7 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             float velocity = message.getFloatVelocity(); // Forza della plettrata
 
             // Troviamo quale corda deve suonare questa nota.
-            // Una logica semplice: la prima corda che può coprire questa nota entro 12 tasti.
+            // La prima corda che può coprire questa nota entro 12 tasti.
             for (int i = 0; i < numStrings; ++i)
             {
                 int openStringNote = currentMidiNotes[i];
@@ -276,26 +276,19 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 if (fret >= 0 && fret <= 12) // Se la nota è suonabile su questa corda
                 {
                     // Calcoliamo la posizione "virtuale" del tasto (0.0 a 1.0)
-                    // per farla digerire alla tua funzione pluckString
+                    // per farla processare alla tua funzione pluckString
                     float position = (float)fret / 12.0f;
 
                     pluckString(i, position);
 
-                    // Comunico tramite le variabili atomic (maniera thread-safe) alla UI
+                    // Comunico tramite le variabili atomic (thread-safe) alla UI
 					// che la corda i è stata pizzicata e qual è la posizione del tasto.
                     uiPluckPosition[i].store(position);
 					uiStringWasPlucked[i].store(true);
 
-                    // Se vogliamo che una nota MIDI attivi solo una corda, usiamo break.
-                    // Altrimenti, se la nota è presente su più corde (es. Mi), suonerebbero tutte.
                     break;
                 }
             }
-        }
-        else if (message.isNoteOff())
-        {
-            // Opzionale: gestire il rilascio se il tuo StringSynthesiser lo supporta.
-            // Molti modelli fisici di corde "lasciano suonare" finché l'energia non decade.
         }
     }
 
@@ -309,9 +302,9 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     
 
     for (int i = 0; i < stringSynths.size(); ++i) {
-        //Assegno l'hardness corrente su tutte le corde
+        // Assegno l'hardness corrente su tutte le corde
         stringSynths.getUnchecked(i)->SetHardness(hardnessParameter->load());
-        //assegno i valori attuali di damp e sustain
+        // Assegno i valori attuali di damp e sustain
         stringSynths.getUnchecked(i)->SetDamping(dampingParameter->load() / 100.0f);
         stringSynths.getUnchecked(i)->SetSustain(sustainParameter->load() / 100.0f);
     }
@@ -371,7 +364,7 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
         if (delayOnParameter->load() >= 0.5f)
         {
-            // 1. Leggiamo i parametri dalla UI
+            // Leggiamo i parametri dalla UI
             float timeInSeconds = delayTimeParameter->load();
             float feedback = delayFbParameter->load() / 100.0f;
 
@@ -379,7 +372,7 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             int delayLengthInSamples = (int)(timeInSeconds * currentSampleRate);
             int delayBufferLength = delayBuffer.getNumSamples();
 
-            // 2. Ciclo sui canali (L e R)
+            // Ciclo sui canali (L e R)
             for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             {
                 auto* channelData = buffer.getWritePointer(ch);
@@ -412,7 +405,7 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 }
             }
 
-            // 3. Finito il blocco audio, aggiorniamo la posizione di scrittura globale per il prossimo giro
+            // Finito il blocco audio, aggiorniamo la posizione di scrittura globale per il prossimo giro
             delayWritePosition += buffer.getNumSamples();
             delayWritePosition %= delayBufferLength;
         }
@@ -429,26 +422,26 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
         if (revOnParameter->load() >= 0.5f)
         {
-            // 1. Aggiorniamo i parametri del riverbero leggendo i valori dalle manopole
+            // Aggiorniamo i parametri del riverbero leggendo i valori dalle manopole
             float mix = revMixParameter->load() / 100.0f;
 
-            reverbParams.roomSize = revSizeParameter->load() / 100.0f; // Da 0.0 (stanza piccola) a 1.0 (chiesa)
-            reverbParams.damping = 0.5f; // Fisso, oppure potresti aggiungere una manopola in futuro
+            reverbParams.roomSize = revSizeParameter->load() / 100.0f; // Da 0.0 (stanza piccola) a 1.0 (stanza grande)
+            reverbParams.damping = 0.5f;
             reverbParams.width = 1.0f;   // Massima ampiezza stereo
 
-            // Calcolo Dry/Wet: se Mix è 0, senti solo chitarra; se Mix è 1, senti solo riverbero
+            // Calcolo Dry/Wet: se Mix è 0, si sente solo la chitarra; se Mix è 1, si sente solo il riverbero
             reverbParams.dryLevel = 1.0f - mix;
             reverbParams.wetLevel = mix;
 
             reverb.setParameters(reverbParams);
 
-            // 2. Applichiamo il riverbero
-            // La classe Reverb di JUCE ha un metodo comodissimo che processa direttamente i canali L e R assieme
+            // Applichiamo il riverbero
             if (buffer.getNumChannels() >= 2)
             {
                 float* leftChannel = buffer.getWritePointer(0);
                 float* rightChannel = buffer.getWritePointer(1);
 
+				// funzione standard di JUCE per processare un buffer stereo con il riverbero
                 reverb.processStereo(leftChannel, rightChannel, buffer.getNumSamples());
             }
         }
@@ -457,7 +450,8 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     #pragma region Applicazione Master Volume
         float masterVolume = masterVolumeParameter->load() / 100.0f;
-        buffer.applyGain(masterVolume); //Metodo per applicare il volume a tutto il buffer
+        //Metodo per applicare il volume a tutto il buffer
+        buffer.applyGain(masterVolume); 
     #pragma endregion
 
     #pragma region Calcolo livello Meter Volume
@@ -465,7 +459,7 @@ void StringUIdemoAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         float rmsLeft = juce::Decibels::gainToDecibels(buffer.getRMSLevel(0, 0, buffer.getNumSamples()));
         masterRmsLeft.store(rmsLeft);
 
-        // Se abbiamo anche il canale destro (1), facciamo lo stesso
+		// Facciamo lo stesso con il canale destro (1), se esiste
         if (buffer.getNumChannels() > 1) 
         {
             float rmsRight = juce::Decibels::gainToDecibels(buffer.getRMSLevel(1, 0, buffer.getNumSamples()));

@@ -35,7 +35,6 @@ public:
     /// <br>pizzichio al centro = vibrazione massima.</br>
     /// <br>pizzichio vicino ai bordi = vibrazione minima.</br>
     /// </summary>
-    /// <param name="pluckPositionRelative"></param>
     void stringPlucked(float pluckPositionRelative)
     {
 
@@ -58,7 +57,7 @@ public:
     }
 
     /// <summary>
-    /// Costruisco la forma della corda. Che può oscillare
+    /// Costruisco la forma della corda che può oscillare
     /// </summary>
     /// <returns></returns>
     juce::Path generateStringPath() const

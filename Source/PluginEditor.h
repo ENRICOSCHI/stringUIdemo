@@ -31,7 +31,7 @@ public:
 
 private:
 
-    /// --- Titoli delle sezioni ---
+    /// Titoli delle sezioni
     static constexpr int numSezioni = 6;
 	juce::Label titoloSezione[numSezioni];
 
@@ -42,7 +42,7 @@ private:
     juce::Slider manopolaEffetto[numManopole];
     juce::Label titoloManopolaEffetto[numManopole];
 
-	// --- Attachment per collegamenti con APVTS (Componente UI <-> Parametro) ---
+	// Attachment per collegamenti con APVTS (Componente UI <-> Parametro)
 	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> timeAttachment;
@@ -54,31 +54,31 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> revSizeAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> masterAttachment;
 
-	// --- Callback del Timer --- (Per interazione Audio Thread -> UI Thread per la MIDI)
+	// Callback del Timer (Per interazione Audio Thread -> UI Thread per la MIDI)
 	void timerCallback() override;
     /* Permette di controllare periodicamente 
     se l'Audio Thread ha flaggato una corda come suonata.*/
 
-    // --- Mouse ---
+    // Mouse
     void mouseDown(const juce::MouseEvent& e) override { handleMouseEvent(e); }
     void mouseDrag(const juce::MouseEvent& e) override { handleMouseEvent(e); }
     void mouseUp(const juce::MouseEvent& e) override { oldPosFret = -1; oldMidiNote = -1; }
     void handleMouseEvent(const juce::MouseEvent& e);
 
-    // --- Paint helpers ---
+    // Paint helpers
     void SetTitle(juce::Graphics&);
     void SetLineaSeparatrice(juce::Graphics&);
     void SetStrings(juce::Graphics&);
     void SetSeparationFret(juce::Graphics&);
 
-    // --- Tuning helpers ---
+    // Tuning helpers
     // Aggiorna la label di tuning per la corda i (mostra nome nota + delta semitoni)
     void updateTuningLabel(int stringIndex);
 
     // Aggiorna tutte le label di tuning
     void updateAllTuningLabels();
 
-	// --- Sezioni della UI ---
+	// Sezioni della UI
     juce::Rectangle<int> areaOscilloscopio;
     juce::Rectangle<int> areaMaster;
     juce::Rectangle<int> areaParametriFisici;
@@ -87,7 +87,7 @@ private:
     juce::Rectangle<int> areaReverb;
     juce::Rectangle<int> areaCordeSotto;
 
-    // --- Dati ---
+    // Dati
     StringUIdemoAudioProcessor& audioProcessor;
 
     juce::OwnedArray<StringComponent> stringComponents;
@@ -108,7 +108,7 @@ private:
     const int numCorde = 6;
 
     // Larghezza della colonna tuning a sinistra delle corde
-    // Layout: [−](22) [Label nota(50)] [+](22) gap(8) → totale 102
+    // Layout: [−](22) [Label nota(50)] [+](22)
     static constexpr int tuningPanelWidth = 110;
 
     // Stato mouse (evita retriggering sulla stessa posizione)

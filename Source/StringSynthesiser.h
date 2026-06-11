@@ -62,10 +62,6 @@ public:
         currentDelayLength = juce::jlimit((size_t)2, maxDelayLength, currentDelayLength);
         pos = 0; // reset posizione per evitare artefatti
 
-        /*std::generate(excitationSample.begin(),
-            excitationSample.begin() + currentDelayLength,
-            [] { return (juce::Random::getSystemRandom().nextFloat() * 2.0f) - 1.0f; });*/
-
         generateExcitation();
     }
 
