@@ -720,8 +720,7 @@ void StringUIdemoAudioProcessorEditor::applicaPreset(int presetId)
         setParam("hardness",0.01f); setParam("damping", 100.0f); setParam("sustain", 100.0f);
         setParam("delayOn", 1.0f); setParam("distOn", 1.0f); setParam("revOn", 1.0f);
 
-		// Open C: C2, G2, C3, G3, C4, E4 (invertita perchè le corde sono ordinate dalla più grave alla più acuta)
-        setTuning(64, 60, 55, 48, 43, 36);
+        setTuning(60, 57, 55, 52, 50, 48);
         break;
     case 3: // Electric
         setParam("drive", 6.33f); setParam("gain", 0.65f);
@@ -730,7 +729,7 @@ void StringUIdemoAudioProcessorEditor::applicaPreset(int presetId)
         setParam("hardness", 1.0f); setParam("damping", 100.0f); setParam("sustain", 100.0f);
         setParam("delayOn", 1.0f); setParam("distOn", 1.0f); setParam("revOn", 1.0f);
 
-        setTuning(76, 61, 67, 62, 57, 52);
+        setTuning(76, 71, 67, 62, 57, 52);
         break;
     case 4: // Bass
         setParam("drive", 1.44f); setParam("gain", 0.45f);
