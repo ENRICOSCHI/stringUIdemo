@@ -34,3 +34,4 @@ Se invece si intende solo eseguire il plugin allora è possibile andare nella ca
 - Stefano Cadalt
 - Enrico Fiore
 - Davide Pica
+<br>**Progetto esame "Circuiti e algoritmi del suono" da 9 crediti dell'[UNIVPM](https://www.univpm.it/Entra/).**
