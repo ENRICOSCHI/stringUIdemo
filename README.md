@@ -23,7 +23,7 @@ Il modello presenta tre effetti attivabili e disattivabili dalla UI: **Distorsio
 
 ## Documentazione
 
-Per vedere la documentazione e approfondire la struttura del codice, si può guardare alla seguente cartella: (link cartella).
+Per vedere la documentazione e approfondire la struttura del codice, si può guardare alla seguente cartella: ([RelazionePDF](https://github.com/ENRICOSCHI/stringUIdemo/tree/main/Documentazione)).
 
 ## Eseguibile Plugin
 
